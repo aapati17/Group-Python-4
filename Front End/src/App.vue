@@ -1,11 +1,40 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+<script>
+import { ref } from 'vue'
+
+export default {
+    setup() {
+        const message = ref([])
+
+        const load = async () => {
+            try {
+                const response = await fetch("http://127.0.0.1:8000/", {
+                    method: "GET",
+                    // Change to 'cors' to allow cross-origin requests
+                    mode: 'cors' 
+                })
+
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                message.value = await response.json()
+                
+            } catch (error) {
+                console.error('There was a problem with your fetch operation:', error);
+            }
+        }
+
+        load()
+
+        return { message }
+    }
+}
 </script>
 
 <template>
   <main>
-    <h1>Hello World</h1>
+    <h1>Sample Heading Using SFC</h1>
+    <h1> {{ message.message }}</h1>
   </main>
 </template>
 
