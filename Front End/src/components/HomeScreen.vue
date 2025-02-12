@@ -12,14 +12,7 @@
       <input type="file" id="upload-file" @change="handleFileUpload" accept=".zip" />
     </div>
 
-    <div class="input-container">
-      <label>Select Metric to Calculate:</label>
-      <div class="radio-group">
-        <input type="radio" id="lcom4" value="LCOM4" v-model="selectedMetric" />
-        <label for="lcom4">LCOM4</label>
-      </div>
-    </div>
-
+    <!-- Submit Button -->
     <button @click="submitData">Submit</button>
   </main>
 </template>
@@ -31,7 +24,6 @@ export default {
   setup() {
     const githubUrl = ref('');
     const uploadedFile = ref(null);
-    const selectedMetric = ref('');
 
     const handleFileUpload = (event) => {
       uploadedFile.value = event.target.files[0];
@@ -40,13 +32,11 @@ export default {
     const submitData = () => {
       console.log('GitHub URL:', githubUrl.value);
       console.log('Uploaded File:', uploadedFile.value);
-      console.log('Selected Metric:', selectedMetric.value);
     };
 
     return {
       githubUrl,
       uploadedFile,
-      selectedMetric,
       handleFileUpload,
       submitData
     };
@@ -74,8 +64,7 @@ label {
   margin-bottom: 5px;
 }
 
-input[type="text"],
-input[type="file"] {
+input {
   display: block;
   width: 100%;
   padding: 10px;
@@ -83,16 +72,6 @@ input[type="file"] {
   margin-bottom: 15px;
   border: 1px solid #ccc;
   border-radius: 5px;
-}
-
-.radio-group {
-  display: flex;
-  align-items: center;
-  margin-top: 10px;
-}
-
-.radio-group input {
-  margin-right: 10px;
 }
 
 button {
