@@ -1,19 +1,6 @@
 import os
-import shutil
 import javalang
-import git
-import git.repo
 from collections import defaultdict
-
-def _clone_github_repo(repo_url: str, local_path: str) -> None:
-    """
-    If user selects to get LCOMHS for a public GitHub repository
-
-    param: repo_url: remote GitHub Repository URL
-    param: local_path: local repository to clone the repository
-    """
-    git.repo.clone_from(repo_url, local_path)
-
 
 def _get_java_files(directory: any) -> list[any]:
     """

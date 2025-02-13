@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from routers.lcomhs_router import router as lcomhs_router
 
 app = FastAPI(
-    title="LCOM4 Microservice",
-    description="Computes LCOM4 metric for Java projects",
+    title="LCOMHS Microservice",
+    description="Computes LCOMHS metric for Java projects",
     version="0.1.0"
 )
 

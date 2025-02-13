@@ -4,7 +4,7 @@ from services.lcomhs_calculator import calculate_lcomhs
 
 client = TestClient(app)
 
-def test_calculate_lcom4():
+def test_calculate_lcomhs():
     mock_class = _mock_java_class_with_methods()
     result = calculate_lcomhs(mock_class)
     # assertion
