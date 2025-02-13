@@ -13,10 +13,14 @@
     <div class="input-container">
       <label>Select Metric to Calculate:</label>
       <div class="radio-group">
-        <input type="radio" id="lcom4" value="LCOM4" v-model="selectedMetric" />
-        <label for="lcom4">LCOM4</label>
+          <input type="radio" id="lcom4" value="LCOM4" v-model="selectedMetric" />
+          <label for="lcom4">LCOM4</label>
+
+          <input type="radio" id="lcomhs" value="LCOMHS" v-model="selectedMetric" />
+          <label for="lcomhs">LCOMHS</label>
       </div>
     </div>
+
 
     <button @click="submitData">Submit</button>
   </main>
