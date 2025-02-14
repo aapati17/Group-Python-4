@@ -23,6 +23,10 @@
           <input type="checkbox" id="lcomhs" value="LCOMHS" v-model="selectedMetrics" />
           <label for="lcomhs">LCOMHS</label>
         </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="defscore" value="Defect Score" v-model="selectedMetrics" />
+          <label for="defscore">Defect Score</label>
+        </div>
       </div>
     </div>
 
