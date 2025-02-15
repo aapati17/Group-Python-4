@@ -106,7 +106,7 @@ export default {
       const hasJavaFiles = files.some(file => file.endsWith('.java'));
       const hasBuildFiles = files.includes("pom.xml") || files.includes("build.gradle");
 
-      if (!hasJavaFiles || !hasBuildFiles) {
+      if (!hasJavaFiles && !hasBuildFiles) {
         errorMessages.value.uploadedFile = "Invalid Java project structure.";
         return false;
       }
@@ -138,12 +138,24 @@ export default {
     };
 
     const sendDataToBackend = async () => {
+      let sourceType = "";
+      let sourceLink = "";
+      let file = null;
+      if (githubUrl.value) {
+        sourceType = "git";
+        sourceLink = githubUrl.value;
+      } else {
+        sourceType = "zip"
+        file = uploadedFile.value;
+        console.log(uploadedFile.value.webkitRelativePath);
+      }
+
       const list = JSON.parse(JSON.stringify(selectedMetrics.value));
       let metrics = "";
       for (let i = 0; i < list.length; i++) {
-        metrics += list[i] + ",";
+        metrics += list[i] + ", ";
       }
-      const req = await axios.post('http://localhost:8080/sample', {"url": githubUrl.value, "metrics": metrics}, {
+      const req = await axios.post('http://localhost:8080/sample', {"sourceType": sourceType, "sourceLink": sourceLink, "file": file, "metrics": metrics}, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Access-Control-Allow-Origin': '*',

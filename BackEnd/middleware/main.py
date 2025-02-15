@@ -1,8 +1,7 @@
-import json
-from fastapi import FastAPI, Form, File
+from fastapi import FastAPI, Form, File, UploadFile
 # Adding CORS middleware from FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from typing import List, Optional
 
 app = FastAPI()
 
@@ -16,5 +15,15 @@ app.add_middleware(
 )
 
 @app.post("/sample")
-async def root(url: str = Form(...), metrics: str = Form(...)):
-    return {"url": url, "metrics": metrics}
+async def root(
+    sourceType: str = Form(...),
+    sourceLink: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    metrics: str = Form(...)
+):
+    return {
+        "sourceType": sourceType,
+        "sourceLink": sourceLink,
+        "file": file,
+        "metrics": metrics
+    }
