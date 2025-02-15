@@ -28,7 +28,7 @@ def calculate_lcom4(java_class: Any) -> float:
             if method_fields_map[m1].intersection(method_fields_map[m2]):
                 adjacency_list[m1].add(m2)
                 adjacency_list[m2].add(m1)
-    print(adjacency_list)
+                
     # Count connected components using adjacency_list
     connected_components = _count_connected_components(adjacency_list)
     
