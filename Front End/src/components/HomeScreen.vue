@@ -146,7 +146,6 @@ export default {
       } else {
         sourceType = "zip";
         file = uploadedFile.value;
-        console.log(uploadedFile.value);
       }
 
       const list = JSON.parse(JSON.stringify(selectedMetrics.value));
