@@ -32,8 +32,7 @@
       </div>
     </div>
 
-    <button @click="submitData">Submit</button>
-    <!-- <button @click.prevent="goToOutputView" type="submit">Submit</button> -->
+    <button @click="submitData" @click.prevent="goToOutputView">Submit</button>
   </main>
 </template>
 
@@ -145,24 +144,33 @@ export default {
         sourceType = "git";
         sourceLink = githubUrl.value;
       } else {
-        sourceType = "zip"
+        sourceType = "zip";
         file = uploadedFile.value;
-        console.log(uploadedFile.value.webkitRelativePath);
+        console.log(uploadedFile.value);
       }
 
       const list = JSON.parse(JSON.stringify(selectedMetrics.value));
-      let metrics = "";
-      for (let i = 0; i < list.length; i++) {
-        metrics += list[i] + ", ";
+      let metrics = list.join(", ");
+
+      const formData = new FormData();
+      formData.append("sourceType", sourceType);
+      formData.append("sourceLink", sourceLink);
+      if (file) {
+        formData.append("file", file);
       }
-      const req = await axios.post('http://localhost:8080/sample', {"sourceType": sourceType, "sourceLink": sourceLink, "file": file, "metrics": metrics}, {
+      formData.append("metrics", metrics);
+
+      try {
+        const req = await axios.post('http://localhost:8080/sample', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Access-Control-Allow-Origin': '*',
           'mode': 'cors'
         }
       });
-      console.log(req.data);
+      } catch (error) {
+        console.error("Error sending data to backend:", error);
+      }
     };
 
     const submitData = async () => {
