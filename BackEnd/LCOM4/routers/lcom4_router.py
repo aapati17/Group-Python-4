@@ -6,9 +6,7 @@ import tempfile
 from LCOM4.services.lcom4_calculator import calculate_lcom4
 from LCOM4.services.project_parser import parse_java_files_in_dir
 
-from common_utils.project_fetcher import (
-    fetch_project_from_github, unzip_project, cleanup_dir
-)
+from common_utils.project_fetcher import fetch_project_from_github, unzip_project, cleanup_dir
 
 router = APIRouter()
 
