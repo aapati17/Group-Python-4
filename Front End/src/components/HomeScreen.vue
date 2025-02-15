@@ -26,13 +26,14 @@
           <label for="lcomhs">LCOMHS</label>
         </div>
         <div class="checkbox-item">
-                  <input type="checkbox" id="defectscore" value="Defect Score" v-model="selectedMetrics" />
-                  <label for="defectscore">Defect Score</label>
-                </div>
+            <input type="checkbox" id="defectscore" value="Defect Score" v-model="selectedMetrics" />
+            <label for="defectscore">Defect Score</label>
+          </div>
       </div>
     </div>
 
-    <button @click="submitData">Submit</button>
+    <!--<button @click="submitData">Submit</button>-->
+    <button @click.prevent="goToOutputView" type="submit">Submit</button>
   </main>
 </template>
 
@@ -176,6 +177,12 @@ export default {
       handleFileUpload,
       submitData
     };
+  },
+  methods: {
+    goToOutputView() {
+      // Emit event to parent to switch to OutputView
+      this.$emit('switch-to-OutputView');
+    }
   }
 };
 </script>
