@@ -32,14 +32,14 @@
       </div>
     </div>
 
-    <!--<button @click="submitData">Submit</button>-->
-    <button @click.prevent="goToOutputView" type="submit">Submit</button>
+    <button @click="submitData" @click.prevent="goToOutputView">Submit</button>
   </main>
 </template>
 
 <script>
 import { ref } from 'vue';
 import JSZip from 'jszip';
+import axios from 'axios';
 
 export default {
   setup() {
@@ -52,7 +52,7 @@ export default {
     });
 
     const isValidGitHubUrl = (url) => {
-      const regex = /^https:\/\/github\.com\/[\w-]+\/[\w-]+$/;
+      const regex = /^https:\/\/github\.com\/[\w-]+\/[\w-]+\/$/;
       return regex.test(url);
     };
 
@@ -63,7 +63,7 @@ export default {
       }
 
       const repoPath = githubUrl.value.replace("https://github.com/", "");
-      const apiUrl = `https://api.github.com/repos/${repoPath}/contents/`;
+      const apiUrl = `https://api.github.com/repos/${repoPath}languages`;
 
       try {
         const response = await fetch(apiUrl);
@@ -72,11 +72,10 @@ export default {
           return false;
         }
         const files = await response.json();
-        const hasJavaFiles = files.some(file => file.name.endsWith('.java'));
-        const hasBuildFiles = files.some(file => file.name === "pom.xml" || file.name === "build.gradle");
+        const keys = Object.keys(files);
 
-        if (!hasJavaFiles || !hasBuildFiles) {
-          errorMessages.value.githubUrl = "The repository is not a valid Java project.";
+        if (!keys.includes("Java")) {
+          errorMessages.value.githubUrl = "The repository does not have a Java project.";
           return false;
         }
 
@@ -106,7 +105,7 @@ export default {
       const hasJavaFiles = files.some(file => file.endsWith('.java'));
       const hasBuildFiles = files.includes("pom.xml") || files.includes("build.gradle");
 
-      if (!hasJavaFiles || !hasBuildFiles) {
+      if (!hasJavaFiles && !hasBuildFiles) {
         errorMessages.value.uploadedFile = "Invalid Java project structure.";
         return false;
       }
@@ -134,6 +133,42 @@ export default {
         if (!isValidStructure) {
           return;
         }
+      }
+    };
+
+    const sendDataToBackend = async () => {
+      let sourceType = "";
+      let githubLink = "";
+      let file = null;
+      if (githubUrl.value) {
+        sourceType = "git";
+        githubLink = githubUrl.value;
+      } else {
+        sourceType = "zip";
+        file = uploadedFile.value;
+      }
+
+      const list = JSON.parse(JSON.stringify(selectedMetrics.value));
+      let metrics = list.join(", ");
+
+      const formData = new FormData();
+      formData.append("sourceType", sourceType);
+      formData.append("githubLink", githubLink);
+      if (file) {
+        formData.append("file", file);
+      }
+      formData.append("metrics", metrics);
+
+      try {
+        const req = await axios.post('http://localhost:8080/sample', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Access-Control-Allow-Origin': '*',
+          'mode': 'cors'
+        }
+      });
+      } catch (error) {
+        console.error("Error sending data to backend:", error);
       }
     };
 
@@ -166,6 +201,7 @@ export default {
 
       if (isValid) {
         console.log("Validation passed. Proceeding with submission.");
+        sendDataToBackend();
       }
     };
 
