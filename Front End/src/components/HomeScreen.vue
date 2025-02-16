@@ -138,11 +138,11 @@ export default {
 
     const sendDataToBackend = async () => {
       let sourceType = "";
-      let sourceLink = "";
+      let githubLink = "";
       let file = null;
       if (githubUrl.value) {
         sourceType = "git";
-        sourceLink = githubUrl.value;
+        githubLink = githubUrl.value;
       } else {
         sourceType = "zip";
         file = uploadedFile.value;
@@ -153,7 +153,7 @@ export default {
 
       const formData = new FormData();
       formData.append("sourceType", sourceType);
-      formData.append("sourceLink", sourceLink);
+      formData.append("githubLink", githubLink);
       if (file) {
         formData.append("file", file);
       }

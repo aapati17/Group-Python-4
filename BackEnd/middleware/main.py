@@ -17,13 +17,13 @@ app.add_middleware(
 @app.post("/sample")
 async def root(
     sourceType: str = Form(...),
-    sourceLink: Optional[str] = Form(None),
+    githubLink: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     metrics: str = Form(...)
 ):
     return {
         "sourceType": sourceType,
-        "sourceLink": sourceLink,
+        "githubLink": githubLink,
         "file": file,
         "metrics": metrics
     }
