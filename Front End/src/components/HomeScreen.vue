@@ -137,7 +137,6 @@ export default {
     };
 
     const sendDataToBackend = async () => {
-      let sourceType = "";
       let githubLink = "";
       let file = null;
       if (githubUrl.value) {
@@ -152,15 +151,11 @@ export default {
       let metrics = list.join(", ");
 
       const formData = new FormData();
-      formData.append("sourceType", sourceType);
       formData.append("githubLink", githubLink);
-      if (file) {
-        formData.append("file", file);
-      }
       formData.append("metrics", metrics);
 
       try {
-        const req = await axios.post('http://localhost:8080/sample', formData, {
+        const req = await axios.post('http://localhost:8000/gateway', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Access-Control-Allow-Origin': '*',

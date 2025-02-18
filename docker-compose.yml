@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  lcom4:
+    build:
+      context: .
+      dockerfile: dockerfile.lcom4
+    container_name: lcom4_container
+    ports:
+      - "8001:8000"   # host:container
+    # If you only want the gateway to call it internally, you can omit the port mapping.
+    # But let's keep it to show direct access for debugging.
+  
+  gateway:
+    build:
+      context: ./BackEnd/middleware
+      dockerfile: Dockerfile
+    container_name: gateway_container
+    ports:
+      - "8080:8080"  # host:gateway
+    environment:
+      - LCOM4_SERVICE_URL=http://lcom4:8000
+    depends_on:
+      - lcom4
