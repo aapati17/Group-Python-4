@@ -2,57 +2,57 @@
   <main>
     <h1>Metric Calculator</h1>
 
-    <div class="input-container">
-      <label for="github-url">Enter GitHub Repository URL:</label>
-      <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" />
-      <p v-if="errorMessages.githubUrl" class="error">{{ errorMessages.githubUrl }}</p>
-    </div>
+    <!-- Show Input Form if OutputView is Hidden -->
+    <div v-if="!showOutput">
+      <div class="input-container">
+        <label for="github-url">Enter GitHub Repository URL:</label>
+        <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" />
+        <p v-if="errorMessages.githubUrl" class="error">{{ errorMessages.githubUrl }}</p>
+      </div>
 
-    <div class="input-container">
-      <label for="upload-file">Upload a ZIP Project:</label>
-      <input type="file" id="upload-file" @change="handleFileUpload" accept=".zip" />
-      <p v-if="errorMessages.uploadedFile" class="error">{{ errorMessages.uploadedFile }}</p>
-    </div>
-
-    <div class="input-container">
-      <label>Select Metrics to Calculate:</label>
-      <div class="checkbox-group">
-        <div class="checkbox-item">
-          <input type="checkbox" id="lcom4" value="LCOM4" v-model="selectedMetrics" />
-          <label for="lcom4">LCOM4</label>
-        </div>
-        <div class="checkbox-item">
-          <input type="checkbox" id="lcomhs" value="LCOMHS" v-model="selectedMetrics" />
-          <label for="lcomhs">LCOMHS</label>
-        </div>
-        <div class="checkbox-item">
+      <div class="input-container">
+        <label>Select Metrics to Calculate:</label>
+        <div class="checkbox-group">
+          <div class="checkbox-item">
+            <input type="checkbox" id="lcom4" value="LCOM4" v-model="selectedMetrics" />
+            <label for="lcom4">LCOM4</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="lcomhs" value="LCOMHS" v-model="selectedMetrics" />
+            <label for="lcomhs">LCOMHS</label>
+          </div>
+          <div class="checkbox-item">
             <input type="checkbox" id="defectscore" value="Defect Score" v-model="selectedMetrics" />
             <label for="defectscore">Defect Score</label>
           </div>
+        </div>
       </div>
+
+      <button @click="submitData">Submit</button>
     </div>
 
-    <button @click="submitData" @click.prevent="goToOutputView">Submit</button>
+    <!-- Show Output Screen After Validation -->
+    <OutputView v-if="showOutput" @goBack="showFormAgain" />
   </main>
 </template>
 
 <script>
 import { ref } from 'vue';
-import JSZip from 'jszip';
 import axios from 'axios';
+import OutputView from './OutputView.vue';
 
 export default {
+  components: {
+    OutputView
+  },
   setup() {
     const githubUrl = ref('');
-    const uploadedFile = ref(null);
     const selectedMetrics = ref([]);
-    const errorMessages = ref({
-      githubUrl: '',
-      uploadedFile: ''
-    });
+    const errorMessages = ref({ githubUrl: '' });
+    const showOutput = ref(false); // Controls OutputView visibility
 
     const isValidGitHubUrl = (url) => {
-      const regex = /^https:\/\/github\.com\/[\w-]+\/[\w-]+\/$/;
+      const regex = /^https:\/\/github\.com\/[\w-]+\/[\w-]+\/?$/;
       return regex.test(url);
     };
 
@@ -63,7 +63,7 @@ export default {
       }
 
       const repoPath = githubUrl.value.replace("https://github.com/", "");
-      const apiUrl = `https://api.github.com/repos/${repoPath}languages`;
+      const apiUrl = `https://api.github.com/repos/${repoPath}/languages`;
 
       try {
         const response = await fetch(apiUrl);
@@ -87,138 +87,29 @@ export default {
       }
     };
 
-    const isValidZipFile = (file) => {
-      const validTypes = ["application/zip", "application/x-zip-compressed"];
-      return file && validTypes.includes(file.type);
-    };
-
-    const isFileSizeValid = (file) => {
-      const MAX_SIZE_MB = 10;
-      return file && file.size <= MAX_SIZE_MB * 1024 * 1024;
-    };
-
-    const checkJavaProjectStructure = async (file) => {
-      const zip = new JSZip();
-      const zipContent = await zip.loadAsync(file);
-      const files = Object.keys(zipContent.files);
-
-      const hasJavaFiles = files.some(file => file.endsWith('.java'));
-      const hasBuildFiles = files.includes("pom.xml") || files.includes("build.gradle");
-
-      if (!hasJavaFiles && !hasBuildFiles) {
-        errorMessages.value.uploadedFile = "Invalid Java project structure.";
-        return false;
-      }
-
-      errorMessages.value.uploadedFile = "";
-      return true;
-    };
-
-    const handleFileUpload = async (event) => {
-      uploadedFile.value = event.target.files[0];
-      errorMessages.value.uploadedFile = "";
-
-      if (uploadedFile.value) {
-        if (!isValidZipFile(uploadedFile.value)) {
-          errorMessages.value.uploadedFile = "Invalid file type. Please upload a ZIP file.";
-          return;
-        }
-
-        if (!isFileSizeValid(uploadedFile.value)) {
-          errorMessages.value.uploadedFile = "File is too large. Maximum allowed size is 10MB.";
-          return;
-        }
-
-        const isValidStructure = await checkJavaProjectStructure(uploadedFile.value);
-        if (!isValidStructure) {
-          return;
-        }
-      }
-    };
-
-    const sendDataToBackend = async () => {
-      let sourceType = "";
-      let githubLink = "";
-      let file = null;
-      if (githubUrl.value) {
-        sourceType = "git";
-        githubLink = githubUrl.value;
-      } else {
-        sourceType = "zip";
-        file = uploadedFile.value;
-      }
-
-      const list = JSON.parse(JSON.stringify(selectedMetrics.value));
-      let metrics = list.join(", ");
-
-      const formData = new FormData();
-      formData.append("sourceType", sourceType);
-      formData.append("githubLink", githubLink);
-      if (file) {
-        formData.append("file", file);
-      }
-      formData.append("metrics", metrics);
-
-      try {
-        const req = await axios.post('http://localhost:8080/sample', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Access-Control-Allow-Origin': '*',
-          'mode': 'cors'
-        }
-      });
-      } catch (error) {
-        console.error("Error sending data to backend:", error);
-      }
-    };
-
     const submitData = async () => {
-      let isValid = true;
       errorMessages.value.githubUrl = '';
-      errorMessages.value.uploadedFile = '';
 
-      if (githubUrl.value) {
-        isValid = await checkGitHubRepoExists();
-      } else if (uploadedFile.value) {
-        if (!isValidZipFile(uploadedFile.value)) {
-          errorMessages.value.uploadedFile = "Invalid file type. Please upload a ZIP file.";
-          isValid = false;
-        }
-
-        if (!isFileSizeValid(uploadedFile.value)) {
-          errorMessages.value.uploadedFile = "File is too large. Maximum allowed size is 10MB.";
-          isValid = false;
-        }
-
-        const isValidStructure = await checkJavaProjectStructure(uploadedFile.value);
-        if (!isValidStructure) {
-          isValid = false;
-        }
-      } else {
-        errorMessages.value.githubUrl = "Please provide either a GitHub link or upload a ZIP file.";
-        isValid = false;
-      }
-
+      let isValid = await checkGitHubRepoExists();
       if (isValid) {
-        console.log("Validation passed. Proceeding with submission.");
-        sendDataToBackend();
+        console.log("Validation passed. Proceeding to OutputView.");
+        showOutput.value = true;
       }
+    };
+
+
+    const showFormAgain = () => {
+      showOutput.value = false;
     };
 
     return {
       githubUrl,
-      uploadedFile,
       selectedMetrics,
       errorMessages,
-      handleFileUpload,
-      submitData
+      submitData,
+      showOutput,
+      showFormAgain
     };
-  },
-  methods: {
-    goToOutputView() {
-      // Emit event to parent to switch to OutputView
-      this.$emit('switch-to-OutputView');
-    }
   }
 };
 </script>
@@ -243,8 +134,7 @@ label {
   margin-bottom: 5px;
 }
 
-input[type="text"],
-input[type="file"] {
+input[type="text"] {
   display: block;
   width: 100%;
   padding: 10px;
