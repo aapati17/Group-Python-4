@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers.lcomhs_router import router as lcomhs_router
+from LCOMHS.routers.lcomhs_router import router as lcomhs_router
 
 app = FastAPI(
     title="LCOMHS Microservice",
