@@ -1,8 +1,8 @@
 import os
 from fastapi import APIRouter, HTTPException, Form, Body, Query
 from typing import Optional, Dict
-from DefectScore.services.defect_score_calculator import compute_defect_score_from_github
-from DefectScore.services.firebase_service import store_label_mapping_in_firebase, fetch_label_mapping_from_firebase
+from services.defect_score_calculator import compute_defect_score_from_github
+from services.firebase_service import store_label_mapping_in_firebase, fetch_label_mapping_from_firebase
 
 router = APIRouter()
 

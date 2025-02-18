@@ -28,7 +28,27 @@
         </div>
       </div>
 
-      <button @click="submitData">Submit</button>
+    <!-- Tag Input Box for Defect Score -->
+    <div class="input-container" v-if="selectedMetrics.includes('Defect Score')">
+      <label>Defect Score Inputs:</label>
+      <h4>Please add in format "label" : "score", no gap</h4>
+      <div class="tag-input">
+        <input
+          type="text"
+          v-model="tagInput"
+          @keyup.enter="addTag"
+          placeholder="Add input and press Enter"
+        />
+        <div class="tags">
+          <span v-for="(tag, index) in defectScoreTags" :key="index" class="tag">
+            {{ tag }}
+            <span class="remove-tag" @click="removeTag(index)">×</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <button @click="submitData">Submit</button>
     </div>
 
     <!-- Show Output Screen After Validation -->
@@ -37,7 +57,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import axios from 'axios';
 import OutputView from './OutputView.vue';
 
@@ -50,6 +70,10 @@ export default {
     const selectedMetrics = ref([]);
     const errorMessages = ref({ githubUrl: '' });
     const showOutput = ref(false); // Controls OutputView visibility
+
+    // Tag Input State
+    const tagInput = ref('');
+    const defectScoreTags = ref([]);
 
     const isValidGitHubUrl = (url) => {
       const regex = /^https:\/\/github\.com\/[\w-]+\/[\w-]+\/?$/;
@@ -125,13 +149,29 @@ export default {
       showOutput.value = false;
     };
 
+    // Tag Input Methods
+    const addTag = () => {
+      if (tagInput.value.trim() !== '') {
+        defectScoreTags.value.push(tagInput.value.trim());
+        tagInput.value = '';
+      }
+    };
+
+    const removeTag = (index) => {
+      defectScoreTags.value.splice(index, 1);
+    };
+
     return {
       githubUrl,
       selectedMetrics,
       errorMessages,
       submitData,
       showOutput,
-      showFormAgain
+      showFormAgain,
+      tagInput,
+      defectScoreTags,
+      addTag,
+      removeTag
     };
   }
 };
@@ -199,5 +239,32 @@ button {
 
 button:hover {
   background-color: #0056b3;
+}
+
+.tag-input {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.tag {
+  background-color: #e0e0e0;
+  padding: 5px 10px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.remove-tag {
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
 }
 </style>
