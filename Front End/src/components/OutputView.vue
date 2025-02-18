@@ -1,24 +1,29 @@
 <template>
-  <h1>Output View</h1>
-  <div class="table-container">
-    <table class="output-table">
-      <thead>
-        <tr>
-          <th>Class</th>
-          <th>Score</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(row, index) in tableData" :key="index">
-          <td>{{ row.class }}</td>
-          <td>{{ row.score }}</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="output-container">
+    <!-- Back Button (Top Left) -->
+    <button class="back-button" @click="goBack">←</button>
+
+    <h1>Output View</h1>
+
+    <div class="table-container">
+      <table class="output-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(row, index) in tableData" :key="index">
+            <td>{{ row.class }}</td>
+            <td>{{ row.score }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <button class="btn btn-outline-dark" @click="downloadPDF">Export</button>
   </div>
-  <button class="btn btn-outline-dark" @click="downloadPDF">
-      Export
-  </button>
 </template>
 
 <script>
@@ -29,7 +34,6 @@ export default {
   name: 'OutputView',
   data() {
     return {
-      // Static table data with 10 rows and 2 columns
       tableData: [
         { class: 'Class 1', score: 85 },
         { class: 'Class 2', score: 90 },
@@ -46,31 +50,42 @@ export default {
   },
   methods: {
     downloadPDF() {
-      // Create a new jsPDF instance
       const doc = new jsPDF();
-      
-      // Add a title to the PDF
       doc.text("Class Scores", 14, 20);
-      
-      // Prepare table headers and rows
       const head = [['Class', 'Score']];
       const body = this.tableData.map(row => [row.class, row.score]);
-      
-      // Generate the table in the PDF
-      autoTable(doc, {
-        head: head,
-        body: body,
-        startY: 30
-      });
-      
-      // Save the PDF
+      autoTable(doc, { head: head, body: body, startY: 30 });
       doc.save("table_data.pdf");
+    },
+    goBack() {
+      this.$emit('goBack'); // Emit event to notify HomeScreen to show input form again
     }
   }
 }
 </script>
 
 <style scoped>
+.output-container {
+  position: relative;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Back Button Style */
+.back-button {
+  position: absolute;
+  top: 10px;
+  left: 20px; /* Keep it at the top left */
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  color: #007bff;
+}
+
 .table-container {
   text-align: center;
   margin-top: 20px;
@@ -97,7 +112,7 @@ export default {
 
 button {
   margin-top: 20px;
-  padding: 10px 15px;
+  padding: 10px 500px;
   font-size: 16px;
   cursor: pointer;
 }

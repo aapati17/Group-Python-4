@@ -67,7 +67,7 @@ def _get_accessed_fields(method: Any, all_fields: Set[str]) -> Set[str]:
 
     for _, node in method:
         if isinstance(node, javalang.tree.MemberReference):
-            qualifier = node.qualifier
+            qualifier = node.qualifier if node.qualifier else None
             member = node.member
             if qualifier in [None, "this"] and member in all_fields:
                 accessed.add(member)
