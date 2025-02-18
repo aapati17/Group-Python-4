@@ -2,43 +2,54 @@
   <main>
     <h1>Metric Calculator</h1>
 
-    <div class="input-container">
-      <label for="github-url">Enter GitHub Repository URL:</label>
-      <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" />
-      <p v-if="errorMessages.githubUrl" class="error">{{ errorMessages.githubUrl }}</p>
-    </div>
+    <!-- Show Input Form if OutputView is Hidden -->
+    <div v-if="!showOutput">
+      <div class="input-container">
+        <label for="github-url">Enter GitHub Repository URL:</label>
+        <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" />
+        <p v-if="errorMessages.githubUrl" class="error">{{ errorMessages.githubUrl }}</p>
+      </div>
 
-    <div class="input-container">
-      <label>Select Metrics to Calculate:</label>
-      <div class="checkbox-group">
-        <div class="checkbox-item">
-          <input type="checkbox" id="lcom4" value="LCOM4" v-model="selectedMetrics" />
-          <label for="lcom4">LCOM4</label>
-        </div>
-        <div class="checkbox-item">
-          <input type="checkbox" id="lcomhs" value="LCOMHS" v-model="selectedMetrics" />
-          <label for="lcomhs">LCOMHS</label>
-        </div>
-        <div class="checkbox-item">
-          <input type="checkbox" id="defectscore" value="Defect Score" v-model="selectedMetrics" />
-          <label for="defectscore">Defect Score</label>
+      <div class="input-container">
+        <label>Select Metrics to Calculate:</label>
+        <div class="checkbox-group">
+          <div class="checkbox-item">
+            <input type="checkbox" id="lcom4" value="LCOM4" v-model="selectedMetrics" />
+            <label for="lcom4">LCOM4</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="lcomhs" value="LCOMHS" v-model="selectedMetrics" />
+            <label for="lcomhs">LCOMHS</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="defectscore" value="Defect Score" v-model="selectedMetrics" />
+            <label for="defectscore">Defect Score</label>
+          </div>
         </div>
       </div>
+
+      <button @click="submitData">Submit</button>
     </div>
 
-    <button @click="submitData" @click.prevent="goToOutputView">Submit</button>
+    <!-- Show Output Screen After Validation -->
+    <OutputView v-if="showOutput" @goBack="showFormAgain" />
   </main>
 </template>
 
 <script>
 import { ref } from 'vue';
 import axios from 'axios';
+import OutputView from './OutputView.vue';
 
 export default {
+  components: {
+    OutputView
+  },
   setup() {
     const githubUrl = ref('');
     const selectedMetrics = ref([]);
     const errorMessages = ref({ githubUrl: '' });
+    const showOutput = ref(false); // Controls OutputView visibility
 
     const isValidGitHubUrl = (url) => {
       const regex = /^https:\/\/github\.com\/[\w-]+\/[\w-]+\/?$/;
@@ -76,52 +87,29 @@ export default {
       }
     };
 
-    const sendDataToBackend = async () => {
-      const sourceType = "git";
-      const githubLink = githubUrl.value;
-
-      const list = JSON.parse(JSON.stringify(selectedMetrics.value));
-      let metrics = list.join(", ");
-
-      const formData = new FormData();
-      formData.append("sourceType", sourceType);
-      formData.append("githubLink", githubLink);
-      formData.append("metrics", metrics);
-
-      try {
-        await axios.post('http://localhost:8080/sample', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Access-Control-Allow-Origin': '*',
-            'mode': 'cors'
-          }
-        });
-      } catch (error) {
-        console.error("Error sending data to backend:", error);
-      }
-    };
-
     const submitData = async () => {
       errorMessages.value.githubUrl = '';
 
       let isValid = await checkGitHubRepoExists();
       if (isValid) {
-        console.log("Validation passed. Proceeding with submission.");
-        sendDataToBackend();
+        console.log("Validation passed. Proceeding to OutputView.");
+        showOutput.value = true;
       }
+    };
+
+
+    const showFormAgain = () => {
+      showOutput.value = false;
     };
 
     return {
       githubUrl,
       selectedMetrics,
       errorMessages,
-      submitData
+      submitData,
+      showOutput,
+      showFormAgain
     };
-  },
-  methods: {
-    goToOutputView() {
-      this.$emit('switch-to-OutputView');
-    }
   }
 };
 </script>
