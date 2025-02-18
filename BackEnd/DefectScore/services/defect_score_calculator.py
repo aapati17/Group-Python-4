@@ -1,6 +1,6 @@
 import requests
 import math
-from DefectScore.services.firebase_service import fetch_label_mapping_from_firebase
+from services.firebase_service import fetch_label_mapping_from_firebase
 
 def compute_defect_score_from_github(repo_url: str, token: str = None) -> dict:
     """
