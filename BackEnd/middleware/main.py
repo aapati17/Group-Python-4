@@ -26,8 +26,8 @@ def read_root():
 
 @app.post("/gateway/calculate")
 async def gateway_lcom4(
-    gitHubLink: str, 
-    metrics: str
+    gitHubLink: str = Body(..., example="URL For the GitHub Repository"), 
+    metrics: str = Body(..., example="Metrics to be calculated")
     ):
     """
     Proxies the file to the LCOM4 microservice's /api/lcom4/calculate endpoint.

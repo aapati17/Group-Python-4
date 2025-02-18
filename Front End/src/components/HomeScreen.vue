@@ -93,7 +93,7 @@ export default {
 
       try {
         const req = await axios.post('http://localhost:8080/gateway/calculate', {
-          "githubUrl": githubUrl.value,
+          "gitHubLink": githubUrl.value,
           "metrics": metrics
         }, {
         headers: {
