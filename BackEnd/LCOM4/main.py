@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from LCOM4.routers.lcom4_router import router as lcom4_router
+from routers.lcom4_router import router as lcom4_router
 
 app = FastAPI(
     title="LCOM4 Microservice",
