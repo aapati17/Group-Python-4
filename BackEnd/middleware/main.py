@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 import httpx  # We'll use httpx or requests to call the LCOM4 service
 import os
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,30 +18,57 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-
+# Mock Endpoint
 @app.get("/")
 def read_root():
     return {"message": "API Gateway up and running"}
 
-@app.post("/gateway/lcom4")
-async def gateway_lcom4(gitHubLink: str):
+
+@app.post("/gateway/calculate")
+async def gateway_lcom4(
+    gitHubLink: str, 
+    metrics: str
+    ):
     """
     Proxies the file to the LCOM4 microservice's /api/lcom4/calculate endpoint.
     """
 
+    selectedMetrics = metrics.split(",")
+    results = {}
+
+    if "LCOM4" in selectedMetrics:
+        async with httpx.AsyncClient() as client:
+            formdata = {
+                "sourceType": "git",
+                "gitHubLink": gitHubLink
+            }
+            lcom4_response = await client.post(f"{LCOM4_URL}/api/lcom4/calculate", data=formdata, timeout=None)
+        
+        if lcom4_response.status_code != 200:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"LCOM4 call failed: {lcom4_response.status_code}, {lcom4_response.text}"
+            )
+        
+        results["LCOM4"] = lcom4_response.json()
+
+    else:
+        results["LCOM4"] = None
+    
+    return results
     # Make a request to LCOM4 container
     # We'll do a multipart/form-data request with httpx
-    async with httpx.AsyncClient() as client:
-        formdata = {
-            "sourceType": "git",
-            "gitHubLink": gitHubLink
-        }
-        lcom4_response = await client.post(f"{LCOM4_URL}/api/lcom4/calculate", data=formdata, timeout=None)
+    # async with httpx.AsyncClient() as client:
+    #     formdata = {
+    #         "sourceType": "git",
+    #         "gitHubLink": gitHubLink
+    #     }
+    #     lcom4_response = await client.post(f"{LCOM4_URL}/api/lcom4/calculate", data=formdata, timeout=None)
     
-    if lcom4_response.status_code != 200:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"LCOM4 call failed: {lcom4_response.status_code}, {lcom4_response.text}"
-        )
+    # if lcom4_response.status_code != 200:
+    #     raise HTTPException(
+    #         status_code=500, 
+    #         detail=f"LCOM4 call failed: {lcom4_response.status_code}, {lcom4_response.text}"
+    #     )
     
-    return lcom4_response.json()
+    # return lcom4_response.json()
