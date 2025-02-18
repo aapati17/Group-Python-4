@@ -91,7 +91,7 @@ def calculate_lcomhs(class_info: Any) -> float:
     F = len(class_fields)
 
     if M <= 1 or F == 0:
-        return 0    # LCOMHS is undefined for these cases
+        return float(0)    # LCOMHS is undefined for these cases
 
     method_fields_map = {}
 
@@ -106,7 +106,7 @@ def calculate_lcomhs(class_info: Any) -> float:
 
     sum_MF = count
     lcomhs = 1- sum_MF / (M * F)
-    return max(0, min(lcomhs, 2))
+    return float(max(0, min(lcomhs, 2))).__round__(2)
 
 def _extract_locals_and_params(method):
     """Collect local variable names + parameters in a method."""
