@@ -87,12 +87,35 @@ export default {
       }
     };
 
+    const sendDataToBackend = async () => {
+      const list = JSON.parse(JSON.stringify(selectedMetrics.value));
+      let metrics = list.join(", ");
+
+      try {
+        const req = await axios.post('http://localhost:8080/gateway/calculate', {
+          "githubUrl": githubUrl.value,
+          "metrics": metrics
+        }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'mode': 'cors'
+        }
+      })
+      console.log(req.data);
+
+      } catch (error) {
+        console.error("Error sending data to backend:", error);
+      }
+    };
+
     const submitData = async () => {
       errorMessages.value.githubUrl = '';
 
       let isValid = await checkGitHubRepoExists();
       if (isValid) {
         console.log("Validation passed. Proceeding to OutputView.");
+        sendDataToBackend();
         showOutput.value = true;
       }
     };
