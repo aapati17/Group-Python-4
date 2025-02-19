@@ -2,6 +2,8 @@ import os
 import re
 import firebase_admin
 from firebase_admin import credentials, firestore
+from datetime import datetime
+import time
 
 if not firebase_admin._apps:
     cred_path = os.getenv("FIREBASE_CREDS", "serviceAccountKey.json")
@@ -16,6 +18,7 @@ def to_doc_id(repo_url: str) -> str:
     or some sanitized doc ID for Firestore.
     """
     repo_url = repo_url.replace("https://github.com/", "")
+    repo_url = repo_url.replace(".git", "")
     # remove anything not alphanumeric or underscore
     doc_id = re.sub(r"[^a-zA-Z0-9_]+", "_", repo_url)
     return doc_id.lower()
@@ -51,3 +54,33 @@ def fetch_label_mapping_from_firebase(repo_url: str) -> dict:
         return label_severity_map
     data = doc.to_dict()
     return data.get("labelSeverityMap", {})
+
+def store_def_score_data_in_firebase(repo_url: str, label_map: dict):
+    """
+    Stores (or updates) the def_score_data for a given repo URL.
+    """
+    doc_id = to_doc_id(repo_url)
+    data = {
+
+        "timestamp": datetime.utcfromtimestamp(time.time()).isoformat() + "Z",
+        "data": label_map,
+        "gitUniqueId": doc_id,
+
+    }
+    db.collection("defect_score_data").add(data)
+
+def fetch_def_score_data_from_firebase(repo_url: str) -> list:
+    """
+    Gets the lcom4_data for a given repoUrl.
+    Returns a array of data.
+    """
+
+    doc_id = to_doc_id(repo_url)
+
+    query = db.collection("defect_score_data").where("gitUniqueId", "==", doc_id).stream()
+
+    results = []
+    for doc in query:
+        results.append(doc.to_dict())
+
+    return results

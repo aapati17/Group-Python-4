@@ -22,7 +22,7 @@ def compute_defect_score_from_github(repo_url: str, token: str = None) -> dict:
     if not repo_url.startswith("https://github.com/"):
         raise ValueError("Invalid GitHub URL. Must start with 'https://github.com/'")
 
-    path_parts = repo_url.replace("https://github.com/", "").split("/")
+    path_parts = repo_url.replace("https://github.com/", "").replace(".git", "").split("/")
     if len(path_parts) < 2:
         raise ValueError("Invalid GitHub URL. Expected 'https://github.com/owner/repo'")
     owner, repo = path_parts[0], path_parts[1]
