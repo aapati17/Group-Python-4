@@ -7,6 +7,7 @@
       <div class="input-container">
         <label for="github-url">Enter GitHub Repository URL:</label>
         <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" @keyup.enter="checkGitHubRepoExists"/>
+        <button @click="checkGitHubRepoExists">Validate your URL</button>
         <p v-if="errorMessages.githubUrl" :class="{ 'error': !isValidRepo, 'success': isValidRepo }">
           {{ errorMessages.githubUrl }}
         </p>
