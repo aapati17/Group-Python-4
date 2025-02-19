@@ -42,7 +42,7 @@
         </div>
       </div>
 
-      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0">Submit</button>
+      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0 || defectScoreTags.length === 0">Submit</button>
     </div>
 
     <!-- Show Output Screen After Validation -->
@@ -145,15 +145,33 @@ export default {
         }
       })
       console.log(req.data);
-
       } catch (error) {
         console.error("Error sending data to backend:", error);
       }
     };
 
     const submitData = async () => {
+      const tags = defectScoreTags.value.map(tag => tag.split(":")[0].trim());
+      const weights = defectScoreTags.value.map(tag => tag.split(":")[1].trim());
+      const dictionary = {};
+      for (let i = 0; i < tags.length; i++) {
+        dictionary[tags[i]] = Number(weights[i], 10);
+      }
+      
+      const request = new axios.post('http://localhost:8080/gateway/defectscore/labelmapping', {
+        "gitHubLink": githubUrl.value,
+        "labelSeverityMap": dictionary
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'mode': 'cors'
+        }
+      });
+      const response = await request;
+      console.log(response.data);
+      
       sendDataToBackend();
-      showOutput.value = true;
     };
 
     const showFormAgain = () => {
