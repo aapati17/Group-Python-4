@@ -6,8 +6,7 @@
     <div v-if="!showOutput">
       <div class="input-container">
         <label for="github-url">Enter GitHub Repository URL:</label>
-        <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" />
-        <button @click="checkGitHubRepoExists">Check!</button>
+        <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" @keyup.enter="checkGitHubRepoExists"/>
         <p v-if="errorMessages.githubUrl" :class="{ 'error': !isValidRepo, 'success': isValidRepo }">
           {{ errorMessages.githubUrl }}
         </p>
@@ -25,8 +24,7 @@
 
       <!-- Tag Input Box for Defect Score -->
       <div class="input-container" v-if="selectedMetrics.includes('Defect Score')">
-        <label>Defect Score Inputs:</label>
-        <h4>Please add in format "label" : "score", no gap</h4>
+        <h5>You can find the Defect tags and weights extracted from your project in the box below. If no tags were found, here are some default tags and weights. Customize them according to your need and click Update.</h5>
         <div class="tag-input">
           <input
             type="text"
@@ -36,10 +34,11 @@
           />
           <div class="tags">
             <span v-for="(tag, index) in defectScoreTags" :key="index" class="tag">
-              {{ tag }}
+              {{ tag}}
               <span class="remove-tag" @click="removeTag(index)">×</span>
             </span>
           </div>
+          <h5>Once you have customized all of your tags and their weights, click on the Submit button.</h5>
         </div>
       </div>
 
@@ -81,6 +80,23 @@ export default {
       return regex.test(url);
     };
 
+    watch(selectedMetrics, async (newMetric) => {
+      if (newMetric.includes('Defect Score')) {
+        const request = new axios.get(`http://localhost:8080/gateway/defectscore/labelmapping?gitHubLink=${githubUrl.value}`, {
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'mode': 'cors'
+          }
+        });
+        const response = await request;
+        const defectTags = Object.keys(response.data);
+        const defectWeights = Object.values(response.data);
+        for (let i = 0; i < defectTags.length; i++) {
+          defectScoreTags.value.push(`${defectTags[i]}: ${defectWeights[i]}`);
+        }
+      }
+    });
+
     const checkGitHubRepoExists = async () => {
       isValidRepo.value = false;
       if (!isValidGitHubUrl(githubUrl.value)) {
@@ -113,6 +129,7 @@ export default {
     };
 
     const sendDataToBackend = async () => {
+      
       const list = JSON.parse(JSON.stringify(selectedMetrics.value));
       let metrics = list.join(", ");
 
