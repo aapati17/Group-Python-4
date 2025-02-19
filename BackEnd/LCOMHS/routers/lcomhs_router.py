@@ -4,7 +4,9 @@ from typing import Optional
 from services.lcomhs_calculator import calculate_lcomhs
 from services.project_parser import parse_java_files_in_dir
 from services.github_service import fetch_project_from_github, cleanup_dir
-
+from services.firebase_service import to_doc_id, store_lcomhs_data_in_firebase, fetch_lcomhs_data_from_firebase
+from datetime import datetime
+import time
 
 router = APIRouter()
 
@@ -42,7 +44,21 @@ async def calculate_lcomhs_endpoint(
             lcomhs_value = calculate_lcomhs(cls)
             results.append({"class_name": cls.name, "score": lcomhs_value})
 
-        return {"lcomhs": results}
+        history_data = fetch_lcomhs_data_from_firebase(gitHubLink)
+        current_timestamp = datetime.utcfromtimestamp(time.time()).isoformat() + "Z"
+
+        current_data = {
+            "timestamp": current_timestamp,
+            "data": results,
+            "gitUniqueId": to_doc_id(gitHubLink)   
+        }
+
+        store_lcomhs_data_in_firebase(gitHubLink, results)
+
+
+        return { "lcomhs_history": history_data if history_data else [],
+                 "current_lcomhs": current_data }
+
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
