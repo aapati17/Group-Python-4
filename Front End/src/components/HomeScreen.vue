@@ -7,6 +7,7 @@
       <div class="input-container">
         <label for="github-url">Enter GitHub Repository URL:</label>
         <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" />
+        <button @click="checkGitHubRepoExists">Check!</button>
         <p v-if="errorMessages.githubUrl" class="error">{{ errorMessages.githubUrl }}</p>
       </div>
 
@@ -134,14 +135,8 @@ export default {
     };
 
     const submitData = async () => {
-      errorMessages.value.githubUrl = '';
-
-      let isValid = await checkGitHubRepoExists();
-      if (isValid) {
-        console.log("Validation passed. Proceeding to OutputView.");
-        sendDataToBackend();
-        showOutput.value = true;
-      }
+      sendDataToBackend();
+      showOutput.value = true;
     };
 
 
@@ -171,7 +166,8 @@ export default {
       tagInput,
       defectScoreTags,
       addTag,
-      removeTag
+      removeTag,
+      checkGitHubRepoExists
     };
   }
 };
