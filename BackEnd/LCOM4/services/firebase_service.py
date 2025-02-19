@@ -3,6 +3,7 @@ import re
 import firebase_admin
 import time
 from firebase_admin import credentials, firestore
+from datetime import datetime
 
 if not firebase_admin._apps:
     cred_path = os.getenv("FIREBASE_CREDS", "serviceAccountKey.json")
@@ -28,21 +29,25 @@ def store_lcom4_data_in_firebase(repo_url: str, label_map: dict):
     doc_id = to_doc_id(repo_url)
     data = {
 
-        "timestamp": time.time() ,
-        "data": label_map
-        "gitUniqueId": doc_id
+        "timestamp": datetime.utcfromtimestamp(time.time()).isoformat() + "Z",
+        "data": label_map,
+        "gitUniqueId": doc_id,
 
     }
-    db.collection("lcom4_data").document(doc_id).set(data)
+    db.collection("lcom4_data").add(data)
 
-def fetch_lcom4_Data_from_firebase(repo_url: str) -> dict:
+def fetch_lcom4_data_from_firebase(repo_url: str) -> list:
     """
     Gets the lcom4_data for a given repoUrl.
-    Returns a dict of data.
+    Returns a array of data.
     """
-    doc_id = to_doc_id(repo_url)
-    doc_ref = db.collection("lcom4_data").document(doc_id)
-    doc = doc_ref.get()
 
-    data = doc.to_dict()
-    return data.get("lcom4_data", {})
+    doc_id = to_doc_id(repo_url)
+
+    query = db.collection("lcom4_data").where("gitUniqueId", "==", doc_id).stream()
+
+    results = []
+    for doc in query:
+        results.append(doc.to_dict())
+
+    return results

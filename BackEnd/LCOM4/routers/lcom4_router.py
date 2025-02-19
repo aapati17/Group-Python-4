@@ -4,7 +4,9 @@ from typing import Optional
 from services.lcom4_calculator import calculate_lcom4
 from services.project_parser import parse_java_files_in_dir
 from services.github_service import fetch_project_from_github, cleanup_dir
-from services.firebase_service import store_label_mapping_in_firebase, fetch_label_mapping_from_firebase
+from services.firebase_service import to_doc_id, store_lcom4_data_in_firebase, fetch_lcom4_data_from_firebase
+from datetime import datetime
+import time
 
 router = APIRouter()
 
@@ -15,7 +17,7 @@ async def calculate_lcom4_endpoint(
     )
 ):
     """
-    Single endpoint to compute LCOM4 from either a GitHub URL or a ZIP file.
+    Single endpoint to compute LCOM4 from either a GitHub URL.
     
     Request:
       - multipart/form-data
@@ -43,8 +45,20 @@ async def calculate_lcom4_endpoint(
             results.append({"class_name": cls.name, "score": lcom4_value})
 
 
+        history_data = fetch_lcom4_data_from_firebase(gitHubLink)
+        current_timestamp = datetime.utcfromtimestamp(time.time()).isoformat() + "Z"
 
-        return {"lcom4": results}
+        current_data = {
+            "timestamp": current_timestamp,
+            "data": results,
+            "gitUniqueId": to_doc_id(gitHubLink)   
+        }
+
+        store_lcom4_data_in_firebase(gitHubLink, results)
+
+
+        return { "lcom4_history": history_data if history_data else [],
+                 "current_lcom4": current_data }
 
     except Exception as e:
         # Wrap any exceptions in an HTTP 500
