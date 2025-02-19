@@ -8,48 +8,42 @@
         <label for="github-url">Enter GitHub Repository URL:</label>
         <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" />
         <button @click="checkGitHubRepoExists">Check!</button>
-        <p v-if="errorMessages.githubUrl" class="error">{{ errorMessages.githubUrl }}</p>
+        <p v-if="errorMessages.githubUrl" :class="{ 'error': !isValidRepo, 'success': isValidRepo }">
+          {{ errorMessages.githubUrl }}
+        </p>
       </div>
 
       <div class="input-container">
         <label>Select Metrics to Calculate:</label>
-        <div class="checkbox-group">
-          <div class="checkbox-item">
-            <input type="checkbox" id="lcom4" value="LCOM4" v-model="selectedMetrics" />
-            <label for="lcom4">LCOM4</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" id="lcomhs" value="LCOMHS" v-model="selectedMetrics" />
-            <label for="lcomhs">LCOMHS</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" id="defectscore" value="Defect Score" v-model="selectedMetrics" />
-            <label for="defectscore">Defect Score</label>
+        <div class="checkbox-group" :class="{ 'disabled': !isValidRepo }">
+          <div class="checkbox-item" v-for="metric in availableMetrics" :key="metric.value">
+            <input type="checkbox" :id="metric.value" :value="metric.value" v-model="selectedMetrics" :disabled="!isValidRepo" />
+            <label :for="metric.value">{{ metric.label }}</label>
           </div>
         </div>
       </div>
 
-    <!-- Tag Input Box for Defect Score -->
-    <div class="input-container" v-if="selectedMetrics.includes('Defect Score')">
-      <label>Defect Score Inputs:</label>
-      <h4>Please add in format "label" : "score", no gap</h4>
-      <div class="tag-input">
-        <input
-          type="text"
-          v-model="tagInput"
-          @keyup.enter="addTag"
-          placeholder="Add input and press Enter"
-        />
-        <div class="tags">
-          <span v-for="(tag, index) in defectScoreTags" :key="index" class="tag">
-            {{ tag }}
-            <span class="remove-tag" @click="removeTag(index)">×</span>
-          </span>
+      <!-- Tag Input Box for Defect Score -->
+      <div class="input-container" v-if="selectedMetrics.includes('Defect Score')">
+        <label>Defect Score Inputs:</label>
+        <h4>Please add in format "label" : "score", no gap</h4>
+        <div class="tag-input">
+          <input
+            type="text"
+            v-model="tagInput"
+            @keyup.enter="addTag"
+            placeholder="Add input and press Enter"
+          />
+          <div class="tags">
+            <span v-for="(tag, index) in defectScoreTags" :key="index" class="tag">
+              {{ tag }}
+              <span class="remove-tag" @click="removeTag(index)">×</span>
+            </span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <button @click="submitData">Submit</button>
+      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0">Submit</button>
     </div>
 
     <!-- Show Output Screen After Validation -->
@@ -70,11 +64,17 @@ export default {
     const githubUrl = ref('');
     const selectedMetrics = ref([]);
     const errorMessages = ref({ githubUrl: '' });
-    const showOutput = ref(false); // Controls OutputView visibility
+    const showOutput = ref(false);
+    const isValidRepo = ref(false);
 
-    // Tag Input State
     const tagInput = ref('');
     const defectScoreTags = ref([]);
+
+    const availableMetrics = [
+      { value: 'LCOM4', label: 'LCOM4' },
+      { value: 'LCOMHS', label: 'LCOMHS' },
+      { value: 'Defect Score', label: 'Defect Score' }
+    ];
 
     const isValidGitHubUrl = (url) => {
       const regex = /^https:\/\/github\.com\/[\w-]+\/[\w-]+\/?$/;
@@ -82,9 +82,10 @@ export default {
     };
 
     const checkGitHubRepoExists = async () => {
+      isValidRepo.value = false;
       if (!isValidGitHubUrl(githubUrl.value)) {
         errorMessages.value.githubUrl = "Invalid GitHub URL format.";
-        return false;
+        return;
       }
 
       const repoPath = githubUrl.value.replace("https://github.com/", "");
@@ -94,21 +95,20 @@ export default {
         const response = await fetch(apiUrl);
         if (!response.ok) {
           errorMessages.value.githubUrl = "GitHub repository does not exist.";
-          return false;
+          return;
         }
         const files = await response.json();
         const keys = Object.keys(files);
 
         if (!keys.includes("Java")) {
           errorMessages.value.githubUrl = "The repository does not have a Java project.";
-          return false;
+          return;
         }
 
-        errorMessages.value.githubUrl = "";
-        return true;
+        errorMessages.value.githubUrl = "Valid GitHub repository.";
+        isValidRepo.value = true;
       } catch (error) {
         errorMessages.value.githubUrl = "Error connecting to GitHub.";
-        return false;
       }
     };
 
@@ -139,12 +139,10 @@ export default {
       showOutput.value = true;
     };
 
-
     const showFormAgain = () => {
       showOutput.value = false;
     };
 
-    // Tag Input Methods
     const addTag = () => {
       if (tagInput.value.trim() !== '') {
         defectScoreTags.value.push(tagInput.value.trim());
@@ -167,7 +165,9 @@ export default {
       defectScoreTags,
       addTag,
       removeTag,
-      checkGitHubRepoExists
+      checkGitHubRepoExists,
+      isValidRepo,
+      availableMetrics
     };
   }
 };
@@ -263,4 +263,16 @@ button:hover {
   font-weight: bold;
   color: red;
 }
+
+.success {
+  color: green;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.checkbox-group.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 </style>
