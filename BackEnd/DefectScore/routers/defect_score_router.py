@@ -2,7 +2,9 @@ import os
 from fastapi import APIRouter, HTTPException, Form, Body, Query
 from typing import Optional, Dict
 from services.defect_score_calculator import compute_defect_score_from_github
-from services.firebase_service import store_label_mapping_in_firebase, fetch_label_mapping_from_firebase
+from services.firebase_service import to_doc_id,store_label_mapping_in_firebase, fetch_label_mapping_from_firebase,store_def_score_data_in_firebase, fetch_def_score_data_from_firebase
+from datetime import datetime
+import time
 
 router = APIRouter()
 
@@ -28,7 +30,20 @@ async def calculate_defect_score(
 
         # Compute the defect score from the GH Issues
         result = compute_defect_score_from_github(sourceValue, token)
-        return result
+
+        history_data = fetch_def_score_data_from_firebase(sourceValue)
+        current_timestamp = datetime.utcfromtimestamp(time.time()).isoformat() + "Z"
+
+        current_data = {
+            "timestamp": current_timestamp,
+            "data": result,
+            "gitUniqueId": to_doc_id(sourceValue)   
+        }
+
+        store_def_score_data_in_firebase(sourceValue, result)
+
+        return { "defect_score_history": history_data if history_data else [],
+                 "current_defect_score": current_data }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
