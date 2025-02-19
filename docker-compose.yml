@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   lcom4:
     build:
@@ -8,6 +6,10 @@ services:
     container_name: lcom4_container
     ports:
       - "8001:8000"   # host:container
+    volumes:
+      - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
+    environment:
+      - FIREBASE_CREDS=/app/serviceAccountKey.json
     # If you only want the gateway to call it internally, you can omit the port mapping.
     # But let's keep it to show direct access for debugging.
 
@@ -18,6 +20,10 @@ services:
     container_name: lcomhs_container
     ports:
       - "8002:8000"   # host:container
+    volumes:
+      - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
+    environment:
+      - FIREBASE_CREDS=/app/serviceAccountKey.json
     # If you only want the gateway to call it internally, you can omit the port mapping.
     # But let's keep it to show direct access for debugging.
 
