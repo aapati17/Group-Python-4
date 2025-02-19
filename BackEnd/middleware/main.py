@@ -103,7 +103,7 @@ async def call_lcomhs(client: httpx.AsyncClient, gitHubLink: str) -> dict:
 
 @app.post("/gateway/defectscore/labelmapping")
 async def gateway_get_defectscore_labelmapping(
-    gitHubLink: str = Query(..., example="URL For the GitHub Repository"),
+    gitHubLink: str = Body(..., example="https://github.com/owner/repo"),
     labelSeverityMap: Dict[str, int] = Body(..., example={"bug": 2, "critical": 5})
     ):
     """
@@ -118,7 +118,7 @@ async def gateway_get_defectscore_labelmapping(
             "labelSeverityMap": labelSeverityMap
 
         }
-        labelmapping_response = await client.post(f"{DEFECT_SCORE_URL}/api/defect_score/labelsMapping", data=label_data, timeout=None)
+        labelmapping_response = await client.post(f"{DEFECT_SCORE_URL}/api/defect_score/labelsMapping", json=label_data, timeout=None)
 
     if labelmapping_response.status_code != 200:
         raise HTTPException(
