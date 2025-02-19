@@ -50,7 +50,7 @@ def store_labels_for_project(
 
 
 @router.get("/labelsMapping")
-def store_labels_for_project(
+def fetch_labels_for_project(
     sourceValue: str = Query(..., example="https://github.com/owner/repo")
 ):
     """
