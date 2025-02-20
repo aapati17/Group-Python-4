@@ -71,6 +71,79 @@ async def gateway_calculate(
 
     return results
 
+@app.get("/gateway/benchmark")
+async def gateway_benchmark(
+    metrics: str = Query(..., example="LCOM4,DefectScore,LCOMHS"),
+    gitHubLink: str = Query(..., example="github link")
+):
+    selected_metrics = [m.strip().lower() for m in metrics.split(",")]
+    results = {}
+
+    async with httpx.AsyncClient() as client:
+        tasks = []
+
+        if "lcom4" in selected_metrics:
+            tasks.append(get_benchmark_lcom4(client, gitHubLink))
+        else:
+            results["LCOM4"] = None
+
+        if "defectscore" in selected_metrics:
+            tasks.append(get_benchmark_defect_score(client, gitHubLink))
+        else:
+            results["DefectScore"] = None
+
+        if "lcomhs" in selected_metrics:
+            tasks.append(get_benchmark_lcomhs(client, gitHubLink))
+        else:
+            results["LCOMHS"] = None
+
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for resp in responses:
+        if isinstance(resp, Exception):
+            raise HTTPException(status_code=500, detail=str(resp))
+        else:
+            results.update(resp)
+
+    return results
+
+@app.post("/gateway/benchmark")
+async def gateway_benchmark_post(
+    metrics: str = Body(..., example="LCOM4,DefectScore,LCOMHS"),
+    gitHubLink: str = Body(..., example="like to github"),
+    benchmarks: Dict[str, int] = Body(..., description="object of key value pair for benchmarks")
+):
+    selected_metrics = [m.strip().lower() for m in metrics.split(",")]
+    results = {}
+
+    async with httpx.AsyncClient() as client:
+        tasks = []
+
+        if "lcom4" in selected_metrics:
+            tasks.append(post_benchmark_lcom4(client, gitHubLink, benchmarks["lcom4"]))
+        else:
+            results["LCOM4"] = None
+
+        if "defectscore" in selected_metrics:
+            tasks.append(post_benchmark_defect_score(client, gitHubLink, benchmarks["defectscore"]))
+        else:
+            results["DefectScore"] = None
+
+        if "lcomhs" in selected_metrics:
+            tasks.append(post_benchmark_lcomhs(client, gitHubLink, benchmarks["lcomhs"]))
+        else:
+            results["LCOMHS"] = None
+
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for resp in responses:
+        if isinstance(resp, Exception):
+            raise HTTPException(status_code=500, detail=str(resp))
+        else:
+            results.update(resp)
+
+    return results
+
 # Helper functions to call each microservice
 
 async def call_lcom4(client: httpx.AsyncClient, gitHubLink: str) -> dict:
@@ -98,6 +171,54 @@ async def call_lcomhs(client: httpx.AsyncClient, gitHubLink: str) -> dict:
     response = await client.post(f"{LCOMHS_URL}/api/lcomhs/calculate", data=formdata, timeout=None)
     if response.status_code != 200:
         raise Exception(f"LCOMHS call failed: {response.status_code}, {response.text}")
+    return {"LCOMHS": response.json()}
+
+async def get_benchmark_lcom4(client: httpx.AsyncClient, gitHubLink: str) -> dict:
+    response = await client.get(f"{LCOM4_URL}/api/lcom4/benchmark?sourceValue={gitHubLink}")
+    if response.status_code != 200:
+        raise Exception("Failed to fetch LCOM4 benchmark data")
+    return {"LCOM4": response.json()}
+
+async def get_benchmark_defect_score(client: httpx.AsyncClient, gitHubLink: str) -> dict:
+    response = await client.get(f"{DEFECT_SCORE_URL}/api/defect_score/benchmark?sourceValue={gitHubLink}")
+    if response.status_code != 200:
+        raise Exception("Failed to fetch DefectScore benchmark data")
+    return {"DefectScore": response.json()}
+
+async def get_benchmark_lcomhs(client: httpx.AsyncClient, gitHubLink: str) -> dict:
+    response = await client.get(f"{LCOMHS_URL}/api/lcomhs/benchmark?sourceValue={gitHubLink}")
+    if response.status_code != 200:
+        raise Exception("Failed to fetch LCOMHS benchmark data")
+    return {"LCOMHS": response.json()}
+
+async def post_benchmark_lcom4(client: httpx.AsyncClient, githubLink: str, benchmark: int) -> dict:
+    data = {
+        "sourceValue": githubLink,
+        "benchmark": benchmark
+    }
+    response = await client.post(f"{LCOM4_URL}/api/lcom4/benchmark", json=data)
+    if response.status_code != 200:
+        raise Exception("Failed to post LCOM4 benchmark data")
+    return {"LCOM4": response.json()}
+
+async def post_benchmark_defect_score(client: httpx.AsyncClient, githubLink: str, benchmark: int) -> dict:
+    data = {
+        "sourceValue": githubLink,
+        "benchmark": benchmark
+    }
+    response = await client.post(f"{DEFECT_SCORE_URL}/api/defect_score/benchmark", json=data)
+    if response.status_code != 200:
+        raise Exception("Failed to post DefectScore benchmark data")
+    return {"DefectScore": response.json()}
+
+async def post_benchmark_lcomhs(client: httpx.AsyncClient, githubLink: str, benchmark: int) -> dict:
+    data = {
+        "sourceValue": githubLink,
+        "benchmark": benchmark
+    }
+    response = await client.post(f"{LCOMHS_URL}/api/lcomhs/benchmark", json=data)
+    if response.status_code != 200:
+        raise Exception("Failed to post LCOMHS benchmark data")
     return {"LCOMHS": response.json()}
 
 
