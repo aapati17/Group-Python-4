@@ -17,10 +17,10 @@ Team Members:
 # Instruction to run the app 
 
 For MAC / Windows:-
- - Paste the ServiceAccountKey.json in ServiceAccountKey.json directory
+ - Paste the ServiceAccountKey.json in root directory of the project
  - Start the terminal and go to the path location where the project is stored
  - Run ```docker-compose up —build```
- - once built, open browser and go to ```https//:localhost:5173```
+ - once built, open browser and go to ```https://localhost:5173```
 
 ## Prerequisites
 
