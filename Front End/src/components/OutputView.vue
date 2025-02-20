@@ -4,6 +4,9 @@
     <h2>LCOM Metrics Over Time</h2>
     <br>
     <br>
+    <button class="back-button" @click="$emit('goBack')">Back</button>
+    <br>
+    <br>
     <div class="controls">
       <label for="class-select">Select Class:</label>
       <select v-model="selectedClass" v-if="classNames.length">
