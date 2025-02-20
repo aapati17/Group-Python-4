@@ -32,7 +32,7 @@ def store_label_mapping_in_firebase(repo_url: str, label_map: dict):
         "repoUrl": repo_url,
         "labelSeverityMap": label_map
     }
-    db.collection("project_severity_maps").document(doc_id).set(data)
+    db.collection("project_severity_maps").document(doc_id).set(data, merge=True)
 
 def fetch_label_mapping_from_firebase(repo_url: str) -> dict:
     """
@@ -64,7 +64,7 @@ def store_def_score_data_in_firebase(repo_url: str, label_map: dict):
 
         "timestamp": datetime.utcfromtimestamp(time.time()).isoformat() + "Z",
         "data": label_map,
-        "gitUniqueId": doc_id,
+        "gitUniqueId": doc_id
 
     }
     db.collection("defect_score_data").add(data)

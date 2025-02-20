@@ -23,6 +23,15 @@
         </div>
       </div>
 
+      <!-- Benchmark Input Section -->
+      <div class="input-container" v-if="selectedMetrics.length > 0">
+        <h3>Set Benchmarks</h3>
+        <div v-for="metric in selectedMetrics" :key="metric">
+          <label :for="metric + '-benchmark'">{{ metric }} Benchmark:</label>
+          <input type="number" :id="metric + '-benchmark'" v-model.number="benchmarks[metric]" />
+        </div>
+      </div>
+
       <!-- Tag Input Box for Defect Score -->
       <div class="input-container" v-if="selectedMetrics.includes('DefectScore')">
         <h5>You can find the Defect tags and weights extracted from your project in the box below. If no tags were found, here are some default tags and weights. Customize them according to your need and click Update.</h5>
@@ -35,7 +44,7 @@
           />
           <div class="tags">
             <span v-for="(tag, index) in defectScoreTags" :key="index" class="tag">
-              {{ tag}}
+              {{ tag }}
               <span class="remove-tag" @click="removeTag(index)">×</span>
             </span>
           </div>
@@ -47,12 +56,12 @@
     </div>
 
     <!-- Show Output Screen After Validation -->
-    <OutputView :computedData="computedData" v-if="showOutput" @goBack="showFormAgain" />
+    <OutputView :computedData="computedData" :benchmarks="benchmarks" v-if="showOutput" @goBack="showFormAgain" />
   </main>
 </template>
 
 <script>
-import { ref, watch } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import axios from 'axios';
 import OutputView from './OutputView.vue';
 
@@ -70,6 +79,9 @@ export default {
     const tagInput = ref('');
     const defectScoreTags = ref([]);
 
+    // reactive object to hold benchmarks for each metric
+    const benchmarks = reactive({});
+
     const computedData = ref({});
 
     const availableMetrics = [
@@ -83,20 +95,65 @@ export default {
       return regex.test(url);
     };
 
-    watch(selectedMetrics, async (newMetric) => {
-      if (newMetric.includes('DefectScore')) {
-        const request = new axios.get(`http://localhost:8080/gateway/defectscore/labelmapping?gitHubLink=${githubUrl.value}`, {
+    // fetch benchmark values using your GET gateway/benchmark API
+    const fetchBenchmarks = async () => {
+      try {
+        const list = JSON.parse(JSON.stringify(selectedMetrics.value));
+        let metricsString = list.join(", ");
+        const response = await axios.get(`http://localhost:8080/gateway/benchmark?gitHubLink=${githubUrl.value}&metrics=${metricsString}`, {
           headers: {
             'Access-Control-Allow-Origin': '*',
-            'mode': 'cors'
+            mode: 'cors'
           }
         });
-        const response = await request;
-        const defectTags = Object.keys(response.data);
-        const defectWeights = Object.values(response.data);
-        for (let i = 0; i < defectTags.length; i++) {
-          defectScoreTags.value.push(`${defectTags[i]}: ${defectWeights[i]}`);
+        // Sample response:
+        // {
+        //   "LCOM4": { "lcom4_benchmark": 1 },
+        //   "DefectScore": { "sefect_score_benchmark": 2 },
+        //   "LCOMHS": { "lcomhs_benchmark": 3 }
+        // }
+        selectedMetrics.value.forEach(metric => {
+          let benchmarkKey = '';
+          if (metric === 'LCOM4') {
+            benchmarkKey = 'lcom4_benchmark';
+          } else if (metric === 'LCOMHS') {
+            benchmarkKey = 'lcomhs_benchmark';
+          } else if (metric === 'DefectScore') {
+            benchmarkKey = 'defect_score_benchmark';
+          }
+          if (response.data[metric] && response.data[metric][benchmarkKey] !== undefined) {
+            benchmarks[metric] = response.data[metric][benchmarkKey];
+          } else {
+            benchmarks[metric] = 0; // default if none is returned
+          }
+        });
+      } catch (error) {
+        console.error("Error fetching benchmarks:", error);
+      }
+    };
+
+    // When metrics are selected, fetch benchmarks and (if applicable) defect score tag mapping
+    watch(selectedMetrics, async (newMetrics) => {
+      if (newMetrics.length > 0) {
+        // For DefectScore, fetch the label mapping if that metric is selected
+        if (newMetrics.includes('DefectScore')) {
+          try {
+            const response = await axios.get(`http://localhost:8080/gateway/defectscore/labelmapping?gitHubLink=${githubUrl.value}`, {
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                mode: 'cors'
+              }
+            });
+            defectScoreTags.value = [];
+            Object.entries(response.data).forEach(([tag, weight]) => {
+              defectScoreTags.value.push(`${tag}: ${weight}`);
+            });
+          } catch (error) {
+            console.error("Error fetching defect score label mapping:", error);
+          }
         }
+        // Fetch benchmarks for all selected metrics
+        await fetchBenchmarks();
       }
     });
 
@@ -158,7 +215,7 @@ export default {
     };
 
     const submitData = async () => {
-      // Build your defect score label mapping
+      // Build the defect score label mapping
       const tags = defectScoreTags.value.map(tag => tag.split(":")[0].trim());
       const weights = defectScoreTags.value.map(tag => tag.split(":")[1].trim());
       const dictionary = {};
@@ -187,22 +244,44 @@ export default {
         return;
       }
 
-      // Only show output view if the backend call for metrics was successful
+      // If the user updated the benchmark, post the new benchmark data
+      try {
+        const list = JSON.parse(JSON.stringify(selectedMetrics.value));
+        let metricsString = list.join(", ");
+        const lowerCaseBenchmarks = Object.fromEntries(
+          Object.entries(benchmarks).map(([key, value]) => [key.toLowerCase(), value])
+        );
+        const benchmarkRequest = await axios.post(
+          'http://localhost:8080/gateway/benchmark',
+          {
+            "gitHubLink": githubUrl.value,
+            "benchmarks": lowerCaseBenchmarks,
+            "metrics": metricsString
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              mode: 'cors'
+            }
+          }
+        );
+        console.log("Benchmark updated:", benchmarkRequest.data);
+      } catch (error) {
+        console.error("Error updating benchmarks:", error);
+      }
+
+      // Only show the output view if the backend call for metrics was successful
       const success = await sendDataToBackend();
       if (success) {
         showOutput.value = true;
       } else {
-        // Optionally, display an error message to the user here.
         console.error("Failed to load metrics data");
       }
     };
 
     const showFormAgain = () => {
       showOutput.value = false;
-    };
-
-    const showOutputScreen = () => {
-      showOutput.value = true;
     };
 
     const addTag = () => {
@@ -222,7 +301,6 @@ export default {
       errorMessages,
       submitData,
       showOutput,
-      showOutputScreen,
       showFormAgain,
       tagInput,
       defectScoreTags,
@@ -231,7 +309,8 @@ export default {
       checkGitHubRepoExists,
       isValidRepo,
       availableMetrics,
-      computedData
+      computedData,
+      benchmarks
     };
   }
 };
@@ -257,7 +336,8 @@ label {
   margin-bottom: 5px;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   display: block;
   width: 100%;
   padding: 10px;
@@ -338,5 +418,4 @@ button:hover {
   opacity: 0.6;
   pointer-events: none;
 }
-
 </style>
