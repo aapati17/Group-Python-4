@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, File, Form, UploadFile
+from fastapi import APIRouter, HTTPException, Form,  Body, Query
 from typing import Optional
 
 from services.lcomhs_calculator import calculate_lcomhs
 from services.project_parser import parse_java_files_in_dir
 from services.github_service import fetch_project_from_github, cleanup_dir
-from services.firebase_service import to_doc_id, store_lcomhs_data_in_firebase, fetch_lcomhs_data_from_firebase
+from services.firebase_service import to_doc_id, store_lcomhs_data_in_firebase, fetch_lcomhs_data_from_firebase, store_benchmark_in_firebase, get_benchmark_from_firebase
 from datetime import datetime
 import time
 
@@ -66,3 +66,31 @@ async def calculate_lcomhs_endpoint(
     finally:
         if temp_dir:
             cleanup_dir(temp_dir)
+
+
+@router.post("/benchmark")
+def store_labels_for_project(
+    sourceValue: str = Body(..., example="https://github.com/owner/repo"),
+    benchmark: int = Body(..., example=1)
+):
+    """
+    Stores custom benchmark -> user entered bench mark in Firebase for a given repo URL.
+    """
+    try:
+        store_benchmark_in_firebase(sourceValue, benchmark)
+        return {"message": "benchmark stored successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/benchmark")
+def store_labels_for_project(
+    sourceValue: str = Query(..., example="https://github.com/owner/repo")
+):
+    """
+    get benchmark -> benchmark from Firebase for a given repo URL.
+    """
+    try:
+        benchmark = get_benchmark_from_firebase(sourceValue)
+        return {"lcomhs_benchmark": benchmark}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
