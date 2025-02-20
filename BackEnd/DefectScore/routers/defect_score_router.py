@@ -2,7 +2,12 @@ import os
 from fastapi import APIRouter, HTTPException, Form, Body, Query
 from typing import Optional, Dict
 from services.defect_score_calculator import compute_defect_score_from_github
-from services.firebase_service import to_doc_id,store_label_mapping_in_firebase, fetch_label_mapping_from_firebase,store_def_score_data_in_firebase, fetch_def_score_data_from_firebase
+from services.firebase_service import to_doc_id,store_label_mapping_in_firebase,\
+    fetch_label_mapping_from_firebase, \
+    store_def_score_data_in_firebase, \
+    fetch_def_score_data_from_firebase, \
+    store_benchmark_in_firebase, \
+    get_benchmark_from_firebase
 from datetime import datetime
 import time
 
@@ -74,5 +79,32 @@ def fetch_labels_for_project(
     try:
         label_mapping = fetch_label_mapping_from_firebase(sourceValue)
         return label_mapping
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/benchmark")
+def store_labels_for_project(
+    sourceValue: str = Body(..., example="https://github.com/owner/repo"),
+    benchmark: int = Body(..., example=1)
+):
+    """
+    Stores custom benchmark -> user entered bench mark in Firebase for a given repo URL.
+    """
+    try:
+        store_benchmark_in_firebase(sourceValue, benchmark)
+        return {"message": "benchmark stored successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/benchmark")
+def store_labels_for_project(
+    sourceValue: str = Query(..., example="https://github.com/owner/repo")
+):
+    """
+    get benchmark -> benchmark from Firebase for a given repo URL.
+    """
+    try:
+        benchmark = get_benchmark_from_firebase(sourceValue)
+        return {"defect_score_benchmark": benchmark}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

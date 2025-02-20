@@ -52,3 +52,31 @@ def fetch_lcomhs_data_from_firebase(repo_url: str) -> list:
         results.append(doc.to_dict())
 
     return results
+
+def store_benchmark_in_firebase(repo_url: str, benchmark: int):
+    """
+    sets the defect_score becnhmark for a given repoUrl.
+    Returns success if update is successful.
+    """
+
+    doc_id = to_doc_id(repo_url)
+    doc_ref = db.collection("project_severity_maps").document(doc_id)
+    data = {
+        "lcomhs_benchmark": benchmark
+    }
+    print(doc_ref.update(data))
+
+def get_benchmark_from_firebase(repo_url: str):
+    """
+    Gets the defect_score benchmark for a given repoUrl.
+    Returns the benchmark value if it is present, otherwise returns None.
+    """
+    doc_id = to_doc_id(repo_url)
+    doc_ref = db.collection("project_severity_maps").document(doc_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        data = doc.to_dict()
+        return data.get("lcomhs_benchmark", 0)
+    else:
+        print("No such document exists.")
+        return None
