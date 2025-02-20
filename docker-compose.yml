@@ -56,3 +56,13 @@ services:
       - lcom4
       - lcomhs
       - defectscore
+  
+  frontend:
+    build:
+      context: ./FrontEnd
+      dockerfile: Dockerfile
+    container_name: frontend_container
+    ports:
+      - "5173:5173"  # host:frontend
+    depends_on:
+      - gateway
