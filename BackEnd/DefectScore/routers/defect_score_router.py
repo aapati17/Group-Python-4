@@ -73,6 +73,15 @@ def fetch_labels_for_project(
     """
     try:
         label_mapping = fetch_label_mapping_from_firebase(sourceValue)
+        if not label_mapping:
+            return {
+            "bug": 2,
+            "minor": 2,
+            "major": 4,
+            "critical": 5,
+            "high": 5,
+            "low": 1
+        }
         return label_mapping
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

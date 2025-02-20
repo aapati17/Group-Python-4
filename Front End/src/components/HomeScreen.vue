@@ -24,7 +24,7 @@
       </div>
 
       <!-- Tag Input Box for Defect Score -->
-      <div class="input-container" v-if="selectedMetrics.includes('Defect Score')">
+      <div class="input-container" v-if="selectedMetrics.includes('DefectScore')">
         <h5>You can find the Defect tags and weights extracted from your project in the box below. If no tags were found, here are some default tags and weights. Customize them according to your need and click Update.</h5>
         <div class="tag-input">
           <input
@@ -43,11 +43,11 @@
         </div>
       </div>
 
-      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0 || defectScoreTags.length === 0">Submit</button>
+      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0 || (selectedMetrics.includes('DefectScore') && defectScoreTags.length === 0)">Submit</button>
     </div>
 
     <!-- Show Output Screen After Validation -->
-    <OutputView v-if="showOutput" @goBack="showFormAgain" />
+    <OutputView :computedData="computedData" v-if="showOutput" @goBack="showFormAgain" />
   </main>
 </template>
 
@@ -70,10 +70,12 @@ export default {
     const tagInput = ref('');
     const defectScoreTags = ref([]);
 
+    const computedData = ref({});
+
     const availableMetrics = [
       { value: 'LCOM4', label: 'LCOM4' },
       { value: 'LCOMHS', label: 'LCOMHS' },
-      { value: 'Defect Score', label: 'Defect Score' }
+      { value: 'DefectScore', label: 'Defect Score' }
     ];
 
     const isValidGitHubUrl = (url) => {
@@ -82,7 +84,7 @@ export default {
     };
 
     watch(selectedMetrics, async (newMetric) => {
-      if (newMetric.includes('Defect Score')) {
+      if (newMetric.includes('DefectScore')) {
         const request = new axios.get(`http://localhost:8080/gateway/defectscore/labelmapping?gitHubLink=${githubUrl.value}`, {
           headers: {
             'Access-Control-Allow-Origin': '*',
@@ -130,53 +132,77 @@ export default {
     };
 
     const sendDataToBackend = async () => {
-      
-      const list = JSON.parse(JSON.stringify(selectedMetrics.value));
-      let metrics = list.join(", ");
-
       try {
-        const req = await axios.post('http://localhost:8080/gateway/calculate', {
-          "gitHubLink": githubUrl.value,
-          "metrics": metrics
-        }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'mode': 'cors'
-        }
-      })
-      console.log(req.data);
+        const list = JSON.parse(JSON.stringify(selectedMetrics.value));
+        let metricsString = list.join(", ");
+        const req = await axios.post(
+          'http://localhost:8080/gateway/calculate',
+          {
+            "gitHubLink": githubUrl.value,
+            "metrics": metricsString
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              mode: 'cors'
+            }
+          }
+        );
+        computedData.value = req.data;
+        return true;
       } catch (error) {
         console.error("Error sending data to backend:", error);
+        return false;
       }
     };
 
     const submitData = async () => {
+      // Build your defect score label mapping
       const tags = defectScoreTags.value.map(tag => tag.split(":")[0].trim());
       const weights = defectScoreTags.value.map(tag => tag.split(":")[1].trim());
       const dictionary = {};
       for (let i = 0; i < tags.length; i++) {
-        dictionary[tags[i]] = Number(weights[i], 10);
+        dictionary[tags[i]] = Number(weights[i]);
       }
-      
-      const request = new axios.post('http://localhost:8080/gateway/defectscore/labelmapping', {
-        "gitHubLink": githubUrl.value,
-        "labelSeverityMap": dictionary
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'mode': 'cors'
-        }
-      });
-      const response = await request;
-      console.log(response.data);
-      
-      sendDataToBackend();
+
+      try {
+        const request = await axios.post(
+          'http://localhost:8080/gateway/defectscore/labelmapping',
+          {
+            "gitHubLink": githubUrl.value,
+            "labelSeverityMap": dictionary
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              mode: 'cors'
+            }
+          }
+        );
+        console.log("Defect Score Mapping:", request.data);
+      } catch (error) {
+        console.error("Error updating defect score mapping:", error);
+        return;
+      }
+
+      // Only show output view if the backend call for metrics was successful
+      const success = await sendDataToBackend();
+      if (success) {
+        showOutput.value = true;
+      } else {
+        // Optionally, display an error message to the user here.
+        console.error("Failed to load metrics data");
+      }
     };
 
     const showFormAgain = () => {
       showOutput.value = false;
+    };
+
+    const showOutputScreen = () => {
+      showOutput.value = true;
     };
 
     const addTag = () => {
@@ -196,6 +222,7 @@ export default {
       errorMessages,
       submitData,
       showOutput,
+      showOutputScreen,
       showFormAgain,
       tagInput,
       defectScoreTags,
@@ -203,7 +230,8 @@ export default {
       removeTag,
       checkGitHubRepoExists,
       isValidRepo,
-      availableMetrics
+      availableMetrics,
+      computedData
     };
   }
 };
