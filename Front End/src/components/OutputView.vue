@@ -58,7 +58,8 @@ ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale
 export default {
   components: { Line },
   props: {
-    computedData: Object
+    computedData: Object,
+    benchmarks: Object
   },
   setup(props) {
     // Mapping keys for LCOM metrics (DefectScore uses a different structure)
@@ -143,10 +144,13 @@ export default {
       const pointRadius = dataPoints.map((_, index) =>
         index === dataPoints.length - 1 ? 8 : 3
       );
-
+      // Create benchmark data points for the entire timeline.
+      const benchmarkValue = props.benchmarks[selectedMetric.value];
+      const benchmarkData = labels.map(() => benchmarkValue);
       return {
         labels,
-        datasets: [{
+        datasets: [
+          {
           label: `${selectedMetric.value} Score for ${selectedClass.value}`,
           data: dataArray,
           borderColor: defaultColor,
@@ -156,7 +160,16 @@ export default {
           fill: true,
           pointBackgroundColor,
           pointRadius
-        }]
+          },
+          {
+            label: 'Benchmark',
+            data: benchmarkData,
+            borderColor: 'green', // or any color you prefer
+            borderDash: [5, 5],   // This creates a dotted line effect
+            fill: false,
+            pointRadius: 0        // Hide points for benchmark line
+          }
+      ]
       };
     });
 
@@ -185,7 +198,8 @@ export default {
       const maxSeverityData = history.map(entry => entry.data.max_severity);
       const stdDevSeverityData = history.map(entry => entry.data.std_dev_severity);
       const minSeverityData = history.map(entry => entry.data.min_severity);
-    
+      const benchmarkValue = props.benchmarks["DefectScore"];
+      const benchmarkData = labels.map(() => benchmarkValue);
       const current = props.computedData.DefectScore.current_defect_score;
       if (current && current.data) {
         labels.push(new Date(current.timestamp).toLocaleString());
@@ -250,6 +264,14 @@ export default {
             fill: true,
             pointBackgroundColor,
             pointRadius
+          },
+          {
+            label: 'Benchmark',
+            data: benchmarkData,
+            borderColor: 'green', // or any color you prefer
+            borderDash: [5, 5],   // This creates a dotted line effect
+            fill: false,
+            pointRadius: 0        // Hide points for benchmark line
           }
         ]
       };
