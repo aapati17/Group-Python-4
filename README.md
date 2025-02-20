@@ -12,11 +12,13 @@ Team Members:
 
 - Docker Desktop
 - A public GitHub repository for which you want to measure metrics
+- An existing FireBase Project and its ServiceAccountKey.json
 
 # Instruction to run the app 
 
 For MAC / Windows:-
- -  start the terminal and go to the path location where the project is stored
+ - Paste the ServiceAccountKey.json in ServiceAccountKey.json directory
+ - Start the terminal and go to the path location where the project is stored
  - Run ```docker-compose up —build```
  - once built, open browser and go to ```https//:localhost:5173```
 
