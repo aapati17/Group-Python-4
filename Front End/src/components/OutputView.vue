@@ -1,119 +1,302 @@
 <template>
-  <div class="output-container">
-    <!-- Back Button (Top Left) -->
-    <button class="back-button" @click="goBack">←</button>
-
-    <h1>Output View</h1>
-
-    <div class="table-container">
-      <table class="output-table">
-        <thead>
-          <tr>
-            <th>Class</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, index) in tableData" :key="index">
-            <td>{{ row.class }}</td>
-            <td>{{ row.score }}</td>
-          </tr>
-        </tbody>
-      </table>
+  <div>
+    <!-- LCOM Metrics Section -->
+    <h2>LCOM Metrics Over Time</h2>
+    <br>
+    <br>
+    <button class="back-button" @click="$emit('goBack')">Back</button>
+    <br>
+    <br>
+    <div class="controls">
+      <label for="class-select">Select Class:</label>
+      <select v-model="selectedClass" v-if="classNames.length">
+        <option v-for="className in classNames" :key="className" :value="className">
+          {{ className }}
+        </option>
+      </select>
+      
+      <label for="metric-select">Select Metric:</label>
+      <select v-model="selectedMetric">
+        <option v-for="metric in availableLCOMMetrics" :key="metric" :value="metric">
+          {{ metric }}
+        </option>
+      </select>
     </div>
 
-    <button class="btn btn-outline-dark" @click="downloadPDF">Export</button>
+    <!-- LCOM Chart (only shows when a valid metric is selected) -->
+    <div class="chart-container">
+      <Line v-if="selectedMetric !== 'DefectScore'" :data="chartData" :options="chartOptions" />
+    </div>
+
+    <!-- DefectScore Visualization -->
+    <div v-if="computedData.DefectScore && computedData.DefectScore.defect_score_history.length">
+      <h2>Defect Score Over Time</h2>
+      <div class="chart-container">
+        <Line :data="defectScoreChartData" :options="defectScoreChartOptions" />
+      </div>
+    </div>
   </div>
 </template>
 
+
 <script>
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import { Line } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement
+} from 'chart.js';
+import { computed, ref, watch } from 'vue';
+
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement);
 
 export default {
-  name: 'OutputView',
-  data() {
-    return {
-      tableData: [
-        { class: 'Class 1', score: 85 },
-        { class: 'Class 2', score: 90 },
-        { class: 'Class 3', score: 78 },
-        { class: 'Class 4', score: 88 },
-        { class: 'Class 5', score: 92 },
-        { class: 'Class 6', score: 80 },
-        { class: 'Class 7', score: 76 },
-        { class: 'Class 8', score: 89 },
-        { class: 'Class 9', score: 84 },
-        { class: 'Class 10', score: 91 }
-      ]
-    }
+  components: { Line },
+  props: {
+    computedData: Object
   },
-  methods: {
-    downloadPDF() {
-      const doc = new jsPDF();
-      doc.text("Class Scores", 14, 20);
-      const head = [['Class', 'Score']];
-      const body = this.tableData.map(row => [row.class, row.score]);
-      autoTable(doc, { head: head, body: body, startY: 30 });
-      doc.save("table_data.pdf");
-    },
-    goBack() {
-      this.$emit('goBack'); // Emit event to notify HomeScreen to show input form again
-    }
+  setup(props) {
+    // Mapping keys for LCOM metrics (DefectScore uses a different structure)
+    const metricKeyMap = {
+      LCOM4: { current: 'current_lcom4', history: 'lcom4_history' },
+      LCOMHS: { current: 'current_lcomhs', history: 'lcomhs_history' }
+    };
+
+    // Compute only those LCOM metrics that have data (i.e. non-empty history arrays)
+    const availableLCOMMetrics = computed(() => {
+      const metrics = ['LCOM4', 'LCOMHS'];
+      return metrics.filter(metric => {
+        const historyKey = metricKeyMap[metric].history;
+        return (
+          props.computedData[metric] &&
+          Array.isArray(props.computedData[metric][historyKey]) &&
+          props.computedData[metric][historyKey].length > 0
+        );
+      });
+    });
+
+    // Selected metric for LCOM metrics.
+    // Initialize to the first available metric if one exists.
+    const selectedMetric = ref(
+      availableLCOMMetrics.value.length > 0 ? availableLCOMMetrics.value[0] : ''
+    );
+    // Update the selected metric if the available list changes
+    watch(availableLCOMMetrics, (newMetrics) => {
+      if (newMetrics.length && !newMetrics.includes(selectedMetric.value)) {
+        selectedMetric.value = newMetrics[0];
+      }
+    });
+
+    const selectedClass = ref('');
+
+    // Compute class names for the selected LCOM metric.
+    const classNames = computed(() => {
+      const currentKey = metricKeyMap[selectedMetric.value]?.current;
+      const metricData = props.computedData[selectedMetric.value]?.[currentKey]?.data || [];
+      return [...new Set(metricData.map(entry => entry.class_name))];
+    });
+
+    // Set a default class when available class names change.
+    watch(classNames, (newClassNames) => {
+      if (newClassNames.length && !newClassNames.includes(selectedClass.value)) {
+        selectedClass.value = newClassNames[0];
+      }
+    });
+
+    // LCOM Chart Data (for LCOM4 and LCOMHS)
+    const chartData = computed(() => {
+      if (!props.computedData[selectedMetric.value]) return { labels: [], datasets: [] };
+
+      const historyKey = metricKeyMap[selectedMetric.value].history;
+      let dataPoints = (props.computedData[selectedMetric.value]?.[historyKey] || [])
+        .map(entry => {
+          const classData = entry.data.find(item => item.class_name === selectedClass.value);
+          return { timestamp: entry.timestamp, score: classData ? classData.score : null };
+        })
+        .filter(entry => entry.score !== null);
+
+      // Append the current value from the current object if available.
+      const currentKey = metricKeyMap[selectedMetric.value].current;
+      const currentObj = props.computedData[selectedMetric.value]?.[currentKey];
+      if (currentObj && currentObj.data) {
+        const currentClassData = currentObj.data.find(item => item.class_name === selectedClass.value);
+        if (currentClassData) {
+          dataPoints.push({
+            timestamp: currentObj.timestamp,
+            score: currentClassData.score
+          });
+        }
+      }
+
+      const labels = dataPoints.map(entry => new Date(entry.timestamp).toLocaleString());
+      const dataArray = dataPoints.map(entry => entry.score);
+      const defaultColor = selectedMetric.value === 'LCOMHS' ? 'blue' : 'red';
+      const highlightColor = 'orange';
+      const pointBackgroundColor = dataPoints.map((_, index) =>
+        index === dataPoints.length - 1 ? highlightColor : defaultColor
+      );
+      const pointRadius = dataPoints.map((_, index) =>
+        index === dataPoints.length - 1 ? 8 : 3
+      );
+
+      return {
+        labels,
+        datasets: [{
+          label: `${selectedMetric.value} Score for ${selectedClass.value}`,
+          data: dataArray,
+          borderColor: defaultColor,
+          backgroundColor: selectedMetric.value === 'LCOMHS'
+            ? 'rgba(0, 0, 255, 0.1)'
+            : 'rgba(255, 0, 0, 0.1)',
+          fill: true,
+          pointBackgroundColor,
+          pointRadius
+        }]
+      };
+    });
+
+    // LCOM Chart Options with dynamic Y-axis scaling for LCOMHS
+    const chartOptions = computed(() => {
+      const yOptions = { beginAtZero: true };
+      if (selectedMetric.value === 'LCOMHS') {
+        yOptions.min = 0;
+        yOptions.max = 2;
+      }
+      return {
+        responsive: true,
+        plugins: { legend: { display: true } },
+        scales: { y: yOptions }
+      };
+    });
+
+    // DefectScore Chart Data – note the structure is different from LCOM metrics
+    const defectScoreChartData = computed(() => {
+      if (!props.computedData.DefectScore) return { labels: [], datasets: [] };
+
+      const history = props.computedData.DefectScore.defect_score_history || [];
+      const labels = history.map(entry => new Date(entry.timestamp).toLocaleString());
+      const totalDefectsData = history.map(entry => entry.data.total_defects);
+      const weightedAvgData = history.map(entry => entry.data.weighted_average_severity);
+      const maxSeverityData = history.map(entry => entry.data.max_severity);
+      const stdDevSeverityData = history.map(entry => entry.data.std_dev_severity);
+      const minSeverityData = history.map(entry => entry.data.min_severity);
+    
+      const current = props.computedData.DefectScore.current_defect_score;
+      if (current && current.data) {
+        labels.push(new Date(current.timestamp).toLocaleString());
+        totalDefectsData.push(current.data.total_defects);
+        weightedAvgData.push(current.data.weighted_average_severity);
+        maxSeverityData.push(current.data.max_severity);
+        stdDevSeverityData.push(current.data.std_dev_severity);
+        minSeverityData.push(current.data.min_severity);
+      }
+      const defaultColor = 'red';
+      const highlightColor = 'orange';
+      const pointBackgroundColor = totalDefectsData.map((_, index) =>
+        index === totalDefectsData.length - 1 ? highlightColor : defaultColor
+      );
+      const pointRadius = totalDefectsData.map((_, index) =>
+        index === totalDefectsData.length - 1 ? 8 : 3
+      );
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Total Defects',
+            data: totalDefectsData,
+            borderColor: 'green',
+            backgroundColor: 'rgba(0, 255, 0, 0.1)',
+            fill: true,
+            pointBackgroundColor,
+            pointRadius
+          },
+          {
+            label: 'Weighted Avg Severity',
+            data: weightedAvgData,
+            borderColor: 'purple',
+            backgroundColor: 'rgba(128, 0, 128, 0.1)',
+            fill: true,
+            pointBackgroundColor,
+            pointRadius
+          },
+          {
+            label: 'Max Severity',
+            data: maxSeverityData,
+            borderColor: 'cyan',
+            backgroundColor: 'rgba(128, 0, 128, 0.1)',
+            fill: true,
+            pointBackgroundColor,
+            pointRadius
+          },
+          {
+            label: 'Min Severity',
+            data: minSeverityData,
+            borderColor: 'blue',
+            backgroundColor: 'rgba(128, 0, 128, 0.1)',
+            fill: true,
+            pointBackgroundColor,
+            pointRadius
+          },
+          {
+            label: 'Standard Deviation Severity',
+            data: stdDevSeverityData,
+            borderColor: 'magenta',
+            backgroundColor: 'rgba(128, 0, 128, 0.1)',
+            fill: true,
+            pointBackgroundColor,
+            pointRadius
+          }
+        ]
+      };
+    });
+
+    // Options for the DefectScore chart
+    const defectScoreChartOptions = computed(() => ({
+      responsive: true,
+      plugins: { legend: { display: true } },
+      scales: { y: { beginAtZero: true } }
+    }));
+
+    return {
+      availableLCOMMetrics,
+      selectedMetric,
+      selectedClass,
+      classNames,
+      chartData,
+      chartOptions,
+      defectScoreChartData,
+      defectScoreChartOptions,
+      computedData: props.computedData
+    };
   }
-}
+};
 </script>
 
 <style scoped>
-.output-container {
-  position: relative;
-  text-align: center;
-  padding: 20px;
+.chart-container {
+  width: 60%;
+  margin: auto;
 }
 
-/* Back Button Style */
-.back-button {
-  position: absolute;
-  top: 10px;
-  left: 20px; /* Keep it at the top left */
-  font-size: 24px;
-  background: none;
-  border: none;
-  cursor: pointer;
+.controls {
+  width: 60%;
+  margin: auto;
 }
 
-.back-button:hover {
-  color: #007bff;
+.controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
-
-.table-container {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.output-table {
-  width: 50%;
-  margin: 0 auto;
-  border-collapse: collapse;
-  border: 1px solid #ccc;
-}
-
-.output-table th,
-.output-table td {
-  border: 1px solid #ccc;
-  padding: 10px;
-  text-align: center;
-}
-
-.output-table th {
-  background-color: #f5f5f5;
+label {
   font-weight: bold;
 }
-
-button {
-  margin-top: 20px;
-  padding: 10px 500px;
-  font-size: 16px;
-  cursor: pointer;
+select {
+  padding: 0.5rem;
 }
 </style>
