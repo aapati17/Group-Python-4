@@ -12,7 +12,7 @@ Team Members:
 
 - Docker Desktop
 - A public GitHub repository for which you want to measure metrics
-- An existing FireBase Project and its ServiceAccountKey.json (video guide for setup given below)
+- An existing FireBase Project and its serviceAccountKey.json (video guide for setup given below)
 
 # Instruction to run the app 
 
