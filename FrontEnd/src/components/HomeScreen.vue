@@ -35,24 +35,10 @@
       <!-- Tag Input Box for Defect Score -->
       <div class="input-container" v-if="selectedMetrics.includes('DefectScore')">
         <h5>You can find the Defect tags and weights extracted from your project in the box below. If no tags were found, here are some default tags and weights. Customize them according to your need and click Update.</h5>
-        <div class="tag-input">
-          <input
-            type="text"
-            v-model="tagInput"
-            @keyup.enter="addTag"
-            placeholder="Add input and press Enter"
-          />
-          <div class="tags">
-            <span v-for="(tag, index) in defectScoreTags" :key="index" class="tag">
-              {{ tag }}
-              <span class="remove-tag" @click="removeTag(index)">×</span>
-            </span>
-          </div>
+        <TagInput v-model:tags="tagsData" />
           <h5>Once you have customized all of your tags and their weights, click on the Submit button.</h5>
-        </div>
       </div>
-
-      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0 || (selectedMetrics.includes('DefectScore') && defectScoreTags.length === 0)">Submit</button>
+      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0 || (selectedMetrics.includes('DefectScore') && tagsData.length === 0)">Submit</button>
     </div>
 
     <!-- Show Output Screen After Validation -->
@@ -63,11 +49,13 @@
 <script>
 import { ref, reactive, watch } from 'vue';
 import axios from 'axios';
+import TagInput from "./TagInput.vue";
 import OutputView from './OutputView.vue';
 
 export default {
   components: {
-    OutputView
+    OutputView,
+    TagInput
   },
   setup() {
     const githubUrl = ref('');
@@ -75,13 +63,10 @@ export default {
     const errorMessages = ref({ githubUrl: '' });
     const showOutput = ref(false);
     const isValidRepo = ref(false);
-
-    const tagInput = ref('');
-    const defectScoreTags = ref([]);
-
+    const tagComponent = ref([])
     // reactive object to hold benchmarks for each metric
     const benchmarks = reactive({});
-
+    const tagsData = ref([])
     const computedData = ref({});
 
     const availableMetrics = [
@@ -132,28 +117,32 @@ export default {
       }
     };
 
+    const fetchTags = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8080/gateway/defectscore/labelmapping?gitHubLink=${githubUrl.value}`, {
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            mode: 'cors'
+          }
+        });
+        tagsData.value = response.data
+        console.log(tagsData.value)
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+      }
+    }
+
     // When metrics are selected, fetch benchmarks and (if applicable) defect score tag mapping
     watch(selectedMetrics, async (newMetrics) => {
       if (newMetrics.length > 0) {
         // For DefectScore, fetch the label mapping if that metric is selected
+        const apiCalls = []
         if (newMetrics.includes('DefectScore')) {
-          try {
-            const response = await axios.get(`http://localhost:8080/gateway/defectscore/labelmapping?gitHubLink=${githubUrl.value}`, {
-              headers: {
-                'Access-Control-Allow-Origin': '*',
-                mode: 'cors'
-              }
-            });
-            defectScoreTags.value = [];
-            Object.entries(response.data).forEach(([tag, weight]) => {
-              defectScoreTags.value.push(`${tag}: ${weight}`);
-            });
-          } catch (error) {
-            console.error("Error fetching defect score label mapping:", error);
-          }
+          apiCalls.push(fetchTags())
         }
         // Fetch benchmarks for all selected metrics
-        await fetchBenchmarks();
+        apiCalls.push(fetchBenchmarks());
+        await Promise.all(apiCalls);
       }
     });
 
@@ -188,7 +177,7 @@ export default {
       }
     };
 
-    const sendDataToBackend = async () => {
+    const calculateMetrics = async () => {
       try {
         const list = JSON.parse(JSON.stringify(selectedMetrics.value));
         let metricsString = list.join(", ");
@@ -214,21 +203,13 @@ export default {
       }
     };
 
-    const submitData = async () => {
-      // Build the defect score label mapping
-      const tags = defectScoreTags.value.map(tag => tag.split(":")[0].trim());
-      const weights = defectScoreTags.value.map(tag => tag.split(":")[1].trim());
-      const dictionary = {};
-      for (let i = 0; i < tags.length; i++) {
-        dictionary[tags[i]] = Number(weights[i]);
-      }
-
+    const postLabelMapping = async () => {
       try {
         const request = await axios.post(
           'http://localhost:8080/gateway/defectscore/labelmapping',
           {
             "gitHubLink": githubUrl.value,
-            "labelSeverityMap": dictionary
+            "labelSeverityMap": tagsData.value
           },
           {
             headers: {
@@ -243,8 +224,8 @@ export default {
         console.error("Error updating defect score mapping:", error);
         return;
       }
-
-      // If the user updated the benchmark, post the new benchmark data
+    }
+    const postBenchMarks = async () => {
       try {
         const list = JSON.parse(JSON.stringify(selectedMetrics.value));
         let metricsString = list.join(", ");
@@ -270,30 +251,26 @@ export default {
       } catch (error) {
         console.error("Error updating benchmarks:", error);
       }
-
+    }
+    const submitData = async () => {
+      const promises = []
+      promises.push(postLabelMapping());
+      promises.push(postBenchMarks());
+      await Promise.all(promises);
+      
       // Only show the output view if the backend call for metrics was successful
-      const success = await sendDataToBackend();
+      const success = await calculateMetrics();
       if (success) {
         showOutput.value = true;
       } else {
         console.error("Failed to load metrics data");
       }
-    };
+    }
 
     const showFormAgain = () => {
       showOutput.value = false;
-    };
+    }
 
-    const addTag = () => {
-      if (tagInput.value.trim() !== '') {
-        defectScoreTags.value.push(tagInput.value.trim());
-        tagInput.value = '';
-      }
-    };
-
-    const removeTag = (index) => {
-      defectScoreTags.value.splice(index, 1);
-    };
 
     return {
       githubUrl,
@@ -302,15 +279,12 @@ export default {
       submitData,
       showOutput,
       showFormAgain,
-      tagInput,
-      defectScoreTags,
-      addTag,
-      removeTag,
       checkGitHubRepoExists,
       isValidRepo,
       availableMetrics,
       computedData,
-      benchmarks
+      benchmarks,
+      tagsData
     };
   }
 };
