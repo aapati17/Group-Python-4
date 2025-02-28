@@ -50,6 +50,7 @@ When you select the **Defect Score** checkbox, the app will prompt you to input 
 - **Example:**  
   For instance, if you label an issue as "bug", you should input the tag **bug** here.
 - **Visual Guide:**  
+
   ![Tags on Github Issues](resources/TagExample.png)
 
 ##### Weight
