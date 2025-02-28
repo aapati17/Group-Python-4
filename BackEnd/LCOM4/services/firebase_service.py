@@ -79,5 +79,5 @@ def get_benchmark_from_firebase(repo_url: str):
         return data.get("lcom4_benchmark", 0)
     else:
         print("No such document exists.")
-        return None
+        return 0
 
