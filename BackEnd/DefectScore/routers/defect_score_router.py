@@ -1,6 +1,6 @@
 import os
 from fastapi import APIRouter, HTTPException, Form, Body, Query
-from typing import Optional, Dict
+from typing import Optional, List
 from services.defect_score_calculator import compute_defect_score_from_github
 from services.firebase_service import to_doc_id,store_label_mapping_in_firebase,\
     fetch_label_mapping_from_firebase, \
@@ -57,7 +57,7 @@ async def calculate_defect_score(
 @router.post("/labelsMapping")
 def store_labels_for_project(
     sourceValue: str = Body(..., example="https://github.com/owner/repo"),
-    labelSeverityMap: Dict[str, int] = Body(..., example={"bug": 2, "critical": 5})
+    labelSeverityMap: List = Body(..., example=[{"key": "bug", "value": 2}, {"key": "critical", "value": 5}])
 ):
     """
     Stores custom label -> severity mapping in Firebase for a given repo URL.
@@ -79,14 +79,32 @@ def fetch_labels_for_project(
     try:
         label_mapping = fetch_label_mapping_from_firebase(sourceValue)
         if not label_mapping:
-            return {
-            "bug": 2,
-            "minor": 2,
-            "major": 4,
-            "critical": 5,
-            "high": 5,
-            "low": 1
-        }
+            return [
+                {
+                    "key": "bug",
+                    "value": 2
+                },
+                {
+                    "key": "minor",
+                    "value": 2
+                },
+                {
+                    "key": "major",
+                    "value": 4
+                },
+                {
+                    "key": "critical",
+                    "value": 5
+                },
+                {
+                    "key": "high",
+                    "value": 5
+                },
+                {
+                    "key": "low",
+                    "value": 1
+                }
+            ]
         return label_mapping
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

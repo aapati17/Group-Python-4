@@ -23,7 +23,7 @@ def to_doc_id(repo_url: str) -> str:
     doc_id = re.sub(r"[^a-zA-Z0-9_]+", "_", repo_url)
     return doc_id.lower()
 
-def store_label_mapping_in_firebase(repo_url: str, label_map: dict):
+def store_label_mapping_in_firebase(repo_url: str, label_map: list):
     """
     Stores (or updates) the labelSeverityMap for a given repo URL.
     """
@@ -34,7 +34,7 @@ def store_label_mapping_in_firebase(repo_url: str, label_map: dict):
     }
     db.collection("project_severity_maps").document(doc_id).set(data, merge=True)
 
-def fetch_label_mapping_from_firebase(repo_url: str) -> dict:
+def fetch_label_mapping_from_firebase(repo_url: str) -> list:
     """
     Gets the labelSeverityMap for a given repoUrl.
     Returns a dict of label->severity, or raises an error if not found.
@@ -42,18 +42,36 @@ def fetch_label_mapping_from_firebase(repo_url: str) -> dict:
     doc_id = to_doc_id(repo_url)
     doc_ref = db.collection("project_severity_maps").document(doc_id)
     doc = doc_ref.get()
-    if not doc.exists:
-        label_severity_map = {
-            "bug": 2,
-            "minor": 2,
-            "major": 4,
-            "critical": 5,
-            "high": 5,
-            "low": 1
+    label_severity_map = [
+        {
+            "key": "bug",
+            "value": 2
+        },
+        {
+            "key": "minor",
+            "value": 2
+        },
+        {
+            "key": "major",
+            "value": 4
+        },
+        {
+            "key": "critical",
+            "value": 5
+        },
+        {
+            "key": "high",
+            "value": 5
+        },
+        {
+            "key": "low",
+            "value": 1
         }
+    ]
+    if not doc.exists:
         return label_severity_map
     data = doc.to_dict()
-    return data.get("labelSeverityMap", {})
+    return data.get("labelSeverityMap", label_severity_map)
 
 def store_def_score_data_in_firebase(repo_url: str, label_map: dict):
     """
@@ -111,4 +129,4 @@ def get_benchmark_from_firebase(repo_url: str):
         return data.get("defect_score_benchmark", 0)
     else:
         print("No such document exists.")
-        return None
+        return 0

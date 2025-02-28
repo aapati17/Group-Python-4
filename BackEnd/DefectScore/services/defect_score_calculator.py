@@ -28,16 +28,8 @@ def compute_defect_score_from_github(repo_url: str, token: str = None) -> dict:
     owner, repo = path_parts[0], path_parts[1]
 
     # Get labelMapping from Firebase
-    label_severity_map = fetch_label_mapping_from_firebase(repo_url)
-    if not label_severity_map:
-        label_severity_map = {
-            "bug": 2,
-            "minor": 2,
-            "major": 4,
-            "critical": 5,
-            "high": 5,
-            "low": 1
-        }
+    label_severity_data = fetch_label_mapping_from_firebase(repo_url)
+
     # Build the GitHub Issues API endpoint
     issues_api_url = f"https://api.github.com/repos/{owner}/{repo}/issues"
 
@@ -72,6 +64,9 @@ def compute_defect_score_from_github(repo_url: str, token: str = None) -> dict:
         # For each label, see if it maps to a known severity
         # Pick the MAX severity found among labels on this issue or skip if none matches
         issue_severity = 0
+        label_severity_map = {}
+        for data in label_severity_data:
+            label_severity_map[data["key"]] = float(data["value"])
         for lname in label_names:
             if lname in label_severity_map:
                 issue_severity = max(issue_severity, label_severity_map[lname])
