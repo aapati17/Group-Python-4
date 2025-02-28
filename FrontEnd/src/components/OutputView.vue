@@ -120,6 +120,7 @@ export default {
           return { timestamp: entry.timestamp, score: classData ? classData.score : null };
         })
         .filter(entry => entry.score !== null);
+        dataPoints = dataPoints.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
       // Append the current value from the current object if available.
       const currentKey = metricKeyMap[selectedMetric.value].current;
@@ -191,15 +192,14 @@ export default {
     const defectScoreChartData = computed(() => {
       if (!props.computedData.DefectScore) return { labels: [], datasets: [] };
 
-      const history = props.computedData.DefectScore.defect_score_history || [];
+      let history = props.computedData.DefectScore.defect_score_history || [];
+      history = history.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       const labels = history.map(entry => new Date(entry.timestamp).toLocaleString());
       const totalDefectsData = history.map(entry => entry.data.total_defects);
       const weightedAvgData = history.map(entry => entry.data.weighted_average_severity);
       const maxSeverityData = history.map(entry => entry.data.max_severity);
       const stdDevSeverityData = history.map(entry => entry.data.std_dev_severity);
       const minSeverityData = history.map(entry => entry.data.min_severity);
-      const benchmarkValue = props.benchmarks["DefectScore"];
-      const benchmarkData = labels.map(() => benchmarkValue);
       const current = props.computedData.DefectScore.current_defect_score;
       if (current && current.data) {
         labels.push(new Date(current.timestamp).toLocaleString());
@@ -209,6 +209,8 @@ export default {
         stdDevSeverityData.push(current.data.std_dev_severity);
         minSeverityData.push(current.data.min_severity);
       }
+      const benchmarkValue = props.benchmarks["DefectScore"];
+      const benchmarkData = labels.map(() => benchmarkValue);
       const defaultColor = 'red';
       const highlightColor = 'orange';
       const pointBackgroundColor = totalDefectsData.map((_, index) =>
