@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Body, Query
 import httpx
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Dict
+from typing import Dict, List
 import asyncio
 
 app = FastAPI(title="API Gateway (Middleware)")
@@ -225,7 +225,7 @@ async def post_benchmark_lcomhs(client: httpx.AsyncClient, githubLink: str, benc
 @app.post("/gateway/defectscore/labelmapping")
 async def gateway_get_defectscore_labelmapping(
     gitHubLink: str = Body(..., example="https://github.com/owner/repo"),
-    labelSeverityMap: Dict[str, int] = Body(..., example={"bug": 2, "critical": 5})
+    labelSeverityMap: List = Body(..., example=[{"key": "bug", "value": 2}, {"key": "critical", "value": 5}])
     ):
     """
     Post the label mapping data to database using Defect Score service
