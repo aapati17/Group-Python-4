@@ -9,7 +9,7 @@ Team Members:
 
 # Prerequisites
 
-- Docker Desktop
+- Docker Desktop / Hub
 - A public GitHub repository for which you want to measure metrics
 - An existing FireBase Project and its serviceAccountKey.json (Click [here](https://arizonastateu-my.sharepoint.com/:v:/g/personal/aapati17_sundevils_asu_edu/EeWlv-MwbWRGuI7MoUIg_S8BB5QoxINDK-MLAbTtZ7Loqw?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=DIdogA) for video guide)
 
@@ -20,15 +20,6 @@ For MAC / Windows:-
  - Start the terminal and go to the path location where the project is stored
  - Run ```docker-compose up -—build```
  - once built, open browser and go to ```https://localhost:5173```
-
-## Prerequisites
-
-Before running the script, make sure you have the following setup / installed:
-
--Firebase project Setup:
-[Link to setup FireBase project](https://arizonastateu-my.sharepoint.com/:v:/g/personal/aapati17_sundevils_asu_edu/EeWlv-MwbWRGuI7MoUIg_S8BB5QoxINDK-MLAbTtZ7Loqw?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=DIdogA)
-
--Docker Desktop / Hub
 
 ### step 1:
 
