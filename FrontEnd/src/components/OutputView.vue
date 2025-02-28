@@ -29,7 +29,7 @@
     </div>
 
     <!-- DefectScore Visualization -->
-    <div v-if="computedData.DefectScore && computedData.DefectScore.defect_score_history.length">
+    <div v-if="computedData.DefectScore">
       <h2>Defect Score Over Time</h2>
       <div class="chart-container">
         <Line :data="defectScoreChartData" :options="defectScoreChartOptions" />
@@ -73,10 +73,16 @@ export default {
       const metrics = ['LCOM4', 'LCOMHS'];
       return metrics.filter(metric => {
         const historyKey = metricKeyMap[metric].history;
+        const currentKey = metricKeyMap[metric].current;
         return (
           props.computedData[metric] &&
-          Array.isArray(props.computedData[metric][historyKey]) &&
-          props.computedData[metric][historyKey].length > 0
+          (
+            (Array.isArray(props.computedData[metric][historyKey]) &&
+             props.computedData[metric][historyKey].length > 0) ||
+            (props.computedData[metric][currentKey] &&
+             Array.isArray(props.computedData[metric][currentKey].data) &&
+             props.computedData[metric][currentKey].data.length > 0)
+          )
         );
       });
     });
