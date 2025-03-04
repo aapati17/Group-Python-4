@@ -13,7 +13,7 @@
         </p>
       </div>
 
-      <div class="input-container">
+      <div class="input-container" v-if="isValidRepo">
         <label>Select Metrics to Calculate:</label>
         <div class="checkbox-group" :class="{ 'disabled': !isValidRepo }">
           <div class="checkbox-item" v-for="metric in availableMetrics" :key="metric.value">
@@ -38,7 +38,9 @@
         <TagInput v-model:tags="tagsData" />
           <h5>Once you have customized all of your tags and their weights, click on the Submit button.</h5>
       </div>
-      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0 || (selectedMetrics.includes('DefectScore') && tagsData.length === 0)">Submit</button>
+      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0 || (selectedMetrics.includes('DefectScore') && tagsData.length === 0)">{{buttonText}}</button>
+
+      <h4 class="loading-text" v-if="isLoading">{{ loadingText }}</h4>    
     </div>
 
     <!-- Show Output Screen After Validation -->
@@ -68,6 +70,11 @@ export default {
     const benchmarks = reactive({});
     const tagsData = ref([])
     const computedData = ref({});
+    // Loading state
+    const isLoading = ref(false);
+    const loadingText = ref('Loading...');
+    const buttonText = ref('Submit Data');
+
 
     const availableMetrics = [
       { value: 'LCOM4', label: 'LCOM4' },
@@ -256,6 +263,7 @@ export default {
       const promises = []
       promises.push(postLabelMapping());
       promises.push(postBenchMarks());
+      buttonText.value = 'Loading...';
       await Promise.all(promises);
       
       // Only show the output view if the backend call for metrics was successful
@@ -284,7 +292,10 @@ export default {
       availableMetrics,
       computedData,
       benchmarks,
-      tagsData
+      tagsData,
+      isLoading,
+      loadingText,
+      buttonText
     };
   }
 };
@@ -391,5 +402,9 @@ button:hover {
 .checkbox-group.disabled {
   opacity: 0.6;
   pointer-events: none;
+}
+
+.loading-text {
+  color: #0056b3;
 }
 </style>
