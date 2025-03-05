@@ -1,6 +1,6 @@
 import requests
 import math
-from services.firebase_service import fetch_label_mapping_from_firebase
+from services.mongo_service import fetch_label_mapping_from_mongo
 
 def compute_defect_score_from_github(repo_url: str, token: str = None) -> dict:
     """
@@ -28,8 +28,7 @@ def compute_defect_score_from_github(repo_url: str, token: str = None) -> dict:
     owner, repo = path_parts[0], path_parts[1]
 
     # Get labelMapping from Firebase
-    label_severity_data = fetch_label_mapping_from_firebase(repo_url)
-
+    label_severity_data = fetch_label_mapping_from_mongo(repo_url)
     # Build the GitHub Issues API endpoint
     issues_api_url = f"https://api.github.com/repos/{owner}/{repo}/issues"
 
