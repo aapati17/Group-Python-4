@@ -23,15 +23,6 @@
         </div>
       </div>
 
-      <!-- Benchmark Input Section -->
-      <div class="input-container" v-if="selectedMetrics.length > 0">
-        <h3>Set Benchmarks</h3>
-        <div v-for="metric in selectedMetrics" :key="metric">
-          <label :for="metric + '-benchmark'">{{ metric }} Benchmark:</label>
-          <input type="number" :id="metric + '-benchmark'" v-model.number="benchmarks[metric]" />
-        </div>
-      </div>
-
       <!-- Tag Input Box for Defect Score -->
       <div class="input-container" v-if="selectedMetrics.includes('DefectScore')">
         <h5>You can find the Defect tags and weights extracted from your project in the box below. If no tags were found, here are some default tags and weights. Customize them according to your need and click Update.</h5>
@@ -44,7 +35,7 @@
     </div>
 
     <!-- Show Output Screen After Validation -->
-    <OutputView :computedData="computedData" :benchmarks="benchmarks" v-if="showOutput" @goBack="showFormAgain" />
+    <OutputView :computedData="computedData" :benchmarks="benchmarks" v-if="showOutput" @goBack="showFormAgain" @updateBenchmarks="patchBenchmarks" />
   </main>
 </template>
 
@@ -74,8 +65,6 @@ export default {
     const isLoading = ref(false);
     const loadingText = ref('Loading...');
     const buttonText = ref('Submit Data');
-
-
     const availableMetrics = [
       { value: 'LCOM4', label: 'LCOM4' },
       { value: 'LCOMHS', label: 'LCOMHS' },
@@ -232,14 +221,35 @@ export default {
         return;
       }
     }
-    const postBenchMarks = async () => {
+    
+    const submitData = async () => {
+      const promises = []
+      promises.push(postLabelMapping());
+      buttonText.value = 'Loading...';
+      await Promise.all(promises);
+      
+      // Only show the output view if the backend call for metrics was successful
+      const success = await calculateMetrics();
+      if (success) {
+        showOutput.value = true;
+      } else {
+        console.error("Failed to load metrics data");
+      }
+    }
+
+    const showFormAgain = () => {
+      showOutput.value = false;
+      buttonText.value = 'Submit Data';
+    }
+
+    const patchBenchmarks = async (benchmarkData) => {
       try {
         const list = JSON.parse(JSON.stringify(selectedMetrics.value));
         let metricsString = list.join(", ");
         const lowerCaseBenchmarks = Object.fromEntries(
-          Object.entries(benchmarks).map(([key, value]) => [key.toLowerCase(), value])
+          Object.entries(benchmarkData).map(([key, value]) => [key.toLowerCase(), value])
         );
-        const benchmarkRequest = await axios.post(
+        const benchmarkRequest = await axios.patch(
           'http://localhost:8080/gateway/benchmark',
           {
             "gitHubLink": githubUrl.value,
@@ -259,26 +269,6 @@ export default {
         console.error("Error updating benchmarks:", error);
       }
     }
-    const submitData = async () => {
-      const promises = []
-      promises.push(postLabelMapping());
-      promises.push(postBenchMarks());
-      buttonText.value = 'Loading...';
-      await Promise.all(promises);
-      
-      // Only show the output view if the backend call for metrics was successful
-      const success = await calculateMetrics();
-      if (success) {
-        showOutput.value = true;
-      } else {
-        console.error("Failed to load metrics data");
-      }
-    }
-
-    const showFormAgain = () => {
-      showOutput.value = false;
-    }
-
 
     return {
       githubUrl,
@@ -295,7 +285,8 @@ export default {
       tagsData,
       isLoading,
       loadingText,
-      buttonText
+      buttonText,
+      patchBenchmarks
     };
   }
 };
