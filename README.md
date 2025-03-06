@@ -27,7 +27,7 @@ The Software Quality Metrics Calculator is a two-part project:
 
 - **Frontend:** A Vue-based web application that serves as the user interface for the Metrics Calculator. It provides an interactive environment for users to provide details about the GitHub repository and the metrics they want to calculate, and display the calculated metrics with all the previous data. 
 
-- **Backend:** A Python application built using FastAPI for communication between Frontend and Backend, and Firebase for retaining the computed data. It contains the core logic for computing, routing and storing the results of computations.
+- **Backend:** A Python application built using FastAPI for communication between Frontend and Backend, and MongoDB for retaining the computed data. It contains the core logic for computing, routing and storing the results of computations.
 
 ___
 
@@ -43,7 +43,6 @@ ___
 Before we start setting up the project, we would need the following:
 - Docker Desktop / Hub
 - A public GitHub repository for which you want to measure metrics
-- An existing FireBase Project and its serviceAccountKey.json (Click [here](https://arizonastateu-my.sharepoint.com/:v:/g/personal/aapati17_sundevils_asu_edu/EeWlv-MwbWRGuI7MoUIg_S8BB5QoxINDK-MLAbTtZ7Loqw?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=DIdogA) for video guide)
 
 
 To run the project, follow these steps:
