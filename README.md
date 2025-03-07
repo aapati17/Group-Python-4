@@ -1,6 +1,7 @@
 
 
 
+
 # SER 516 Group-Python-4
 ## Software Quality Metrics Calculator
 
@@ -34,8 +35,7 @@ ___
 ### Fixes
 
 - Readme and Documentation revised to explain the usage and prerequisites of the project.
-- Defect Tags and Weights are made easier to customize and explanation is added.
-- The services no longer bring 500 error code in the terminal.
+- Benchmarks are no longer forced on to the user.
 ---
 
 ### Setting up and Running the Project
@@ -61,17 +61,17 @@ ___
 ### How to use the Web-App
 
 Once the URL is loaded, you would be greeted with the landing page shown below:
-![image](https://github.com/user-attachments/assets/fa37cbf3-7c99-41f7-9d8f-3de4fb13ea9c)
+![image](https://github.com/user-attachments/assets/61a754c0-a28d-432c-a595-1fb092391a85)
 
 Now, to compute your metrics, you have to follow 4 steps:
 
 - [Validate your GitHub URL](#validate-your-github-url)
 - [Select one or more metrics to calculate](#select-one-or-more-metrics-to-calculate)
-- [Set the benchmark scores for the selected metrics](#set-the-benchmark-scores-for-the-selected-metrics)
+- [Set the benchmark scores for the selected metrics (OPTIONAL)](#set-the-benchmark-scores-for-the-selected-metrics-optional)
 - [Submit the data](#submit-the-data)
 #### Validate your GitHub URL
 - Copy and Paste your GitHub repository URL into the textbox
-![image](https://github.com/user-attachments/assets/827c100a-76ad-4041-a1f4-bf29e062f360)
+![image](https://github.com/user-attachments/assets/13239fa5-4e72-4811-84fd-7317bd9bb6d1)
 - There are two ways to validate your input, either by pressing `return` key or by clicking on the **Validate your URL** button below the textbox highlighted above.
 
 #### Do's and Don'ts:
@@ -95,8 +95,8 @@ This repository has URL: https://github.com/agarasia/ser515
 
 ![image](https://github.com/user-attachments/assets/1113e8b9-a77e-4e96-94be-fd4ad7b625a9)
 
-Note that unless and until you see the message `Valid GitHub repository`, the options for metrics are visible. However, they are *NOT CLICKABLE*.
-![image](https://github.com/user-attachments/assets/a0e3d106-8f73-4c38-95ef-49534fe25d05)
+Note that unless and until you see the message `Valid GitHub repository`, the options for metrics are *NOT VISIBLE*.
+![image](https://github.com/user-attachments/assets/019be2e8-2c96-4cea-9c05-9b167ec4b3a4)
 
 #### Select one or more metrics to calculate:
 Now that you have a valid GitHub URL and it is validated, you would now see that the checkboxes for metrics are clickable.
@@ -141,28 +141,34 @@ Your custom defect tag would now be displayed below the **+ Add Tag** button.
 
 ![image](https://github.com/user-attachments/assets/d6669b4b-5b7c-41de-9420-9bea325a4f87)
 
-#### Set the benchmark scores for the selected metrics
-
-You would observe that upon clicking on any of the metric(s), there are additional details that you need to provide. These are the benchmark scores that you need to set before you send the data for computation and display.
-
-![image](https://github.com/user-attachments/assets/d2f17f1e-712f-441a-819c-445ed8e8e10f)
-
-Type in any benchmark score you would want to compare your actual results against.
-
 #### Submit the data
-Now, just click on **Submit** button.
+Once all the metrics you need are selected, just click on **Submit** button.
 
-![image](https://github.com/user-attachments/assets/9a7a81b2-094a-47af-88ff-477913b49c84)
+![image](https://github.com/user-attachments/assets/34a5bb63-f1ef-458a-9144-99288d61ade8)
 
-The Computation can take longer depending on the number of Java files as well as their sizes. DO NOT click on Submit multiple times.
+The Computation can take longer depending on the number of Java files as well as their sizes. The text on the Submit Data button will change to '*LOADING....*'. 
+
+DO NOT click on Submit multiple times.
 <br>
 
-Once the computation is done, the results would be shown for the metrics within 2 graphs. One for the LCOM metrics (LCOM4 and LCOMHS), and other for the Defect Score.
+#### Set the benchmark scores for the selected metrics (OPTIONAL)
 
-![image](https://github.com/user-attachments/assets/b0ff74de-28f4-48a2-b5fc-c091abda9e49)
+Once the computations are Done and you are about to see the visualized data for your metrics, you can also set the benchmarks and/or decide if you want to compare against the computed data. As you can see the number fields are pre-populated, these benchmarks are fetched from the MongoDB database. 
+
+You would also notice that under the LCOM4 benchmark, the show benchmark checkbox is unticked, this means that I do not want to compare my results for LCOM4 against benchmarks. You can do the same if you selected, say all the metrics i.e. LCOM4, LCOMHS and Defect Score; and do not want to compare the results for LCOMHS and Defect Score. You can simply uncheck the checkbox and the charts would not have the benchmark scores' line in the chart.
+
+Additionally, you can also do something as a mix of the two, say I want to set a new benchmark score for LCOM4 but do not want to see the benchmark in the chart. I can type a new benchmark score within the textbox but still keep the checkbox unchecked.
+
+![image](https://github.com/user-attachments/assets/79b348db-d072-4f0b-951b-adf351a6f498)
+
+Once the *Apply Benchmarks and Show Charts* button is clicked, the results would be shown for the metrics within 2 graphs. One for the LCOM metrics (LCOM4 and LCOMHS), and other for the Defect Score.
+
+![image](https://github.com/user-attachments/assets/0a7e8d1e-1bd5-4c94-8c21-d011ba440cb8)
+
+![image](https://github.com/user-attachments/assets/4ed35575-8580-4800-af13-cf9b6d6dc6b9)
 Since LCOM4 and LCOMHS are computed for each class, there is an option to select which class do you want to observe using the dropdown.
 
-![image](https://github.com/user-attachments/assets/f64723f3-a5b1-4f09-b988-3cbc4785d007)
+![image](https://github.com/user-attachments/assets/c580ed1b-48ae-4b3b-933e-32c24ec82442)
 For defect score, a number of values are illustrated; which are:
 - Total number of Defects
 - Weighted Average Density of Defects
@@ -172,12 +178,10 @@ For defect score, a number of values are illustrated; which are:
 You can hover over data points to see detailed timestamps and score values. The last data point is highlighted with a different color and larger radius, so you know it represents the most recent score.
 ___
 
-### Bugs (as of Period-1-release)
+### Bugs (as of Group-Python-4-Period-2-beta-2)
 
-- The Submit Button does not spawn a loading animation to indicate that the data is sent to the services and computation is in progress.
-- The Benchmarks are forced in this release.
+- The UI for the application needs an overhaul.
 - If the metrics are being calculated for the first time, the graph shown is empty.
-- If the metrics are being calculated again for the same valid GitHub repository, the benchmark scores that are already retained are not extracted successfully.
 
 These bugs would be improved upon in future releases.
 
