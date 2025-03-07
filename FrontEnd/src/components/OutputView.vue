@@ -61,7 +61,7 @@ export default {
   props: {
     computedData: Object,
     benchmarks: Object,
-    showBenchmarks: Boolean
+    showBenchmarkLines: Object
   },
   setup(props) {
     // Mapping keys for LCOM metrics (DefectScore uses a different structure)
@@ -153,15 +153,8 @@ export default {
       const pointRadius = dataPoints.map((_, index) =>
         index === dataPoints.length - 1 ? 8 : 3
       );
-      // Create benchmark data points for the entire timeline.
-      if(props.showBenchmarks) {
-        const benchmarkValue = props.benchmarks[selectedMetric.value];
-        const benchmarkData = labels.map(() => benchmarkValue); 
-        
-        return {
-        labels,
-        datasets: [
-          {
+      
+      const datasets = [{
           label: `${selectedMetric.value} Score for ${selectedClass.value}`,
           data: dataArray,
           borderColor: defaultColor,
@@ -171,35 +164,30 @@ export default {
           fill: true,
           pointBackgroundColor,
           pointRadius
-          },
-          {
+        }];
+
+      // Create benchmark data points for the entire timeline.
+      if(props.showBenchmarkLines &&
+          props.showBenchmarkLines[selectedMetric.value] &&
+          props.benchmarks &&
+          props.benchmarks[selectedMetric.value] !== undefined) {
+        const benchmarkValue = props.benchmarks[selectedMetric.value];
+        const benchmarkData = labels.map(() => benchmarkValue); 
+        
+        datasets.push({
             label: 'Benchmark',
             data: benchmarkData,
             borderColor: 'green', // or any color you prefer
             borderDash: [5, 5],   // This creates a dotted line effect
             fill: false,
             pointRadius: 0        // Hide points for benchmark line
-          }]};
+          });
       }
-      else {
-        return {
-          labels,
-          datasets: [
-            {
-              label: `${selectedMetric.value} Score for ${selectedClass.value}`,
-              data: dataArray,
-              borderColor: defaultColor,
-              backgroundColor: selectedMetric.value === 'LCOMHS'
-                ? 'rgba(0, 0, 255, 0.1)'
-                : 'rgba(255, 0, 0, 0.1)',
-              fill: true,
-              pointBackgroundColor,
-              pointRadius
-            }
-          ]
+     
+      return {
+        labels,
+        datasets: datasets
         };
-      }
-    
     });
 
     // LCOM Chart Options with dynamic Y-axis scaling for LCOMHS
@@ -237,7 +225,10 @@ export default {
         stdDevSeverityData.push(current.data.std_dev_severity);
         minSeverityData.push(current.data.min_severity);
       }
-      if (props.showBenchmarks)
+      if (props.showBenchmarkLines &&
+        props.showBenchmarkLines.DefectScore &&
+        props.benchmarks &&
+        props.benchmarks.DefectScore !== undefined)
       {
         const benchmarkValue = props.benchmarks["DefectScore"];
         const benchmarkData = labels.map(() => benchmarkValue);
