@@ -92,7 +92,7 @@
     flex-direction: column;
     gap: 1rem;
     padding: 1.25rem;
-    background: #fff;
+    background: #ffffff;
     border: 1px solid #e0e0e0;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -110,10 +110,10 @@
   .input-field {
     flex: 1;
     min-width: 150px;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.5rem;
     border: 1px solid #ccc;
     border-radius: 0.375rem;
-    font-size: 1rem;
+    font-size: 12px;
     transition: border-color 0.3s ease;
   }
   
@@ -126,20 +126,21 @@
   .add-button {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem; 
     background: #007BFF;
     color: #fff;
     border: none;
-    padding: 0.75rem 1rem;
-    border-radius: 0.375rem;
+    padding: 0.7rem 0.7rem; 
+    border-radius: 0.25rem; 
     cursor: pointer;
     transition: background-color 0.3s ease;
-    font-size: 1rem;
+    font-size: 10px; 
     white-space: nowrap;
-  }
+    min-width: auto; 
+}
   
   .add-button:disabled {
-    background: #ccc;
+    background: #cdcdcd;
     cursor: not-allowed;
   }
   
