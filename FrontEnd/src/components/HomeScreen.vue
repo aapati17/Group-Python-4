@@ -2,8 +2,8 @@
   <main>
     <h1>Metric Calculator</h1>
 
-    <!-- Show Input Form if OutputView is Hidden -->
-    <div v-if="!showOutput">
+    <!-- Show Input Form if OutputView or BenchmarkDialog is Hidden -->
+    <div v-if="!showOutput && !showBenchmarkDialog">
       <div class="input-container">
         <label for="github-url">Enter GitHub Repository URL:</label>
         <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" @keyup.enter="checkGitHubRepoExists"/>
@@ -34,8 +34,22 @@
       <h4 class="loading-text" v-if="isLoading">{{ loadingText }}</h4>    
     </div>
 
+    <!-- Benchmark Input Dialog -->
+    <div v-if="showBenchmarkDialog" class="dialog-overlay">
+      <div class="dialog">
+        <h3>Set Benchmark Scores</h3>
+        <p>Do you want to add benchmark scores to compare against your repository?</p>
+        <div v-for="metric in selectedMetrics" :key="metric">
+          <label :for="`benchmark-${metric}`">{{ metric }} Benchmark:</label>
+          <input type="number" :id="`benchmark-${metric}`" v-model.number="benchmarkInputs[metric]" :placeholder="`Enter ${metric} benchmark`">
+        </div>
+        <button @click="handleBenchmarkSubmit(true)">Yes, Set Benchmarks</button>
+        <button @click="handleBenchmarkSubmit(false)">No, Show Charts</button>
+      </div>
+    </div>
+
     <!-- Show Output Screen After Validation -->
-    <OutputView :computedData="computedData" :benchmarks="benchmarks" v-if="showOutput" @goBack="showFormAgain" @updateBenchmarks="patchBenchmarks" />
+    <OutputView :computedData="computedData" :benchmarks="benchmarks" :showBenchmarks="showBenchmarkLines" v-if="showOutput" @goBack="showFormAgain" @updateBenchmarks="postBenchmarks" />
   </main>
 </template>
 
@@ -59,6 +73,11 @@ export default {
     const tagComponent = ref([])
     // reactive object to hold benchmarks for each metric
     const benchmarks = reactive({});
+    //New ref for benchmark input dialog
+    const showBenchmarkDialog = ref(false);
+    const benchmarkInputs = ref({});
+    const showBenchmarkLines = ref(false);
+
     const tagsData = ref([])
     const computedData = ref({});
     // Loading state
@@ -76,7 +95,6 @@ export default {
       return regex.test(url);
     };
 
-    // fetch benchmark values using your GET gateway/benchmark API
     const fetchBenchmarks = async () => {
       try {
         const list = JSON.parse(JSON.stringify(selectedMetrics.value));
@@ -139,6 +157,10 @@ export default {
         // Fetch benchmarks for all selected metrics
         apiCalls.push(fetchBenchmarks());
         await Promise.all(apiCalls);
+        // Initialize benchmarkInputs with fetched benchmark values
+        newMetrics.forEach(metric => {
+            benchmarkInputs.value[metric] = benchmarks[metric] || ''; // Use fetched benchmark or default to empty string
+        });
       }
     });
 
@@ -231,7 +253,7 @@ export default {
       // Only show the output view if the backend call for metrics was successful
       const success = await calculateMetrics();
       if (success) {
-        showOutput.value = true;
+        showBenchmarkDialog.value = true; // Show benchmark dialog after successful data submission
       } else {
         console.error("Failed to load metrics data");
       }
@@ -242,14 +264,33 @@ export default {
       buttonText.value = 'Submit Data';
     }
 
-    const patchBenchmarks = async (benchmarkData) => {
+    //New function to handle the benchmark submission
+    const handleBenchmarkSubmit = async (setBenchmarks) => {
+      showBenchmarkDialog.value = false; // close the dialog
+      showBenchmarkLines.value = setBenchmarks; //Set benchmark visibility based on user choice
+      if (setBenchmarks) {
+        //If user wants to set benchmarks, patch only the provided benchmarks
+        await postBenchmarks(benchmarkInputs.value);
+      }
+      showOutput.value = true; //Show the output, with or without benchmarks
+    }
+
+    const postBenchmarks = async (benchmarkData) => {
       try {
         const list = JSON.parse(JSON.stringify(selectedMetrics.value));
         let metricsString = list.join(", ");
-        const lowerCaseBenchmarks = Object.fromEntries(
-          Object.entries(benchmarkData).map(([key, value]) => [key.toLowerCase(), value])
-        );
-        const benchmarkRequest = await axios.patch(
+        const lowerCaseBenchmarks = {};
+        Object.keys(benchmarkData).forEach(key => {
+          // If the benchmark is provided, update the value
+          if (benchmarkData[key] !== '') {
+            lowerCaseBenchmarks[key.toLowerCase()] = benchmarkData[key];
+          }
+          // If the benchmark is not provided, use the previous value
+          else {
+            lowerCaseBenchmarks[key.toLowerCase()] = benchmarks[key];
+          }
+        });
+        const benchmarkRequest = await axios.post(
           'http://localhost:8080/gateway/benchmark',
           {
             "gitHubLink": githubUrl.value,
@@ -265,6 +306,8 @@ export default {
           }
         );
         console.log("Benchmark updated:", benchmarkRequest.data);
+        // Retrieve the updated benchmarks
+        fetchBenchmarks();
       } catch (error) {
         console.error("Error updating benchmarks:", error);
       }
@@ -286,7 +329,11 @@ export default {
       isLoading,
       loadingText,
       buttonText,
-      patchBenchmarks
+      postBenchmarks,
+      showBenchmarkDialog,
+      benchmarkInputs,
+      handleBenchmarkSubmit,
+      showBenchmarkLines
     };
   }
 };
@@ -397,5 +444,37 @@ button:hover {
 
 .loading-text {
   color: #0056b3;
+}
+
+/* Styles for the dialog */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's on top */
+}
+
+.dialog {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 80%;
+  max-width: 500px;
+}
+
+.dialog h3 {
+  margin-bottom: 15px;
+}
+
+.dialog button {
+  margin: 10px;
 }
 </style>

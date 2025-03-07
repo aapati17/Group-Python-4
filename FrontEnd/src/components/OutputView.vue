@@ -49,17 +49,19 @@ import {
   LineElement,
   CategoryScale,
   LinearScale,
-  PointElement
+  PointElement,
+  Filler
 } from 'chart.js';
 import { computed, ref, watch } from 'vue';
 
-ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement);
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, Filler);
 
 export default {
   components: { Line },
   props: {
     computedData: Object,
-    benchmarks: Object
+    benchmarks: Object,
+    showBenchmarks: Boolean
   },
   setup(props) {
     // Mapping keys for LCOM metrics (DefectScore uses a different structure)
@@ -152,9 +154,11 @@ export default {
         index === dataPoints.length - 1 ? 8 : 3
       );
       // Create benchmark data points for the entire timeline.
-      const benchmarkValue = props.benchmarks[selectedMetric.value];
-      const benchmarkData = labels.map(() => benchmarkValue);
-      return {
+      if(props.showBenchmarks) {
+        const benchmarkValue = props.benchmarks[selectedMetric.value];
+        const benchmarkData = labels.map(() => benchmarkValue); 
+        
+        return {
         labels,
         datasets: [
           {
@@ -175,9 +179,27 @@ export default {
             borderDash: [5, 5],   // This creates a dotted line effect
             fill: false,
             pointRadius: 0        // Hide points for benchmark line
-          }
-      ]
-      };
+          }]};
+      }
+      else {
+        return {
+          labels,
+          datasets: [
+            {
+              label: `${selectedMetric.value} Score for ${selectedClass.value}`,
+              data: dataArray,
+              borderColor: defaultColor,
+              backgroundColor: selectedMetric.value === 'LCOMHS'
+                ? 'rgba(0, 0, 255, 0.1)'
+                : 'rgba(255, 0, 0, 0.1)',
+              fill: true,
+              pointBackgroundColor,
+              pointRadius
+            }
+          ]
+        };
+      }
+    
     });
 
     // LCOM Chart Options with dynamic Y-axis scaling for LCOMHS
@@ -215,74 +237,119 @@ export default {
         stdDevSeverityData.push(current.data.std_dev_severity);
         minSeverityData.push(current.data.min_severity);
       }
-      const benchmarkValue = props.benchmarks["DefectScore"];
-      const benchmarkData = labels.map(() => benchmarkValue);
-      const defaultColor = 'red';
-      const highlightColor = 'orange';
-      const pointBackgroundColor = totalDefectsData.map((_, index) =>
-        index === totalDefectsData.length - 1 ? highlightColor : defaultColor
-      );
-      const pointRadius = totalDefectsData.map((_, index) =>
-        index === totalDefectsData.length - 1 ? 8 : 3
-      );
-      return {
-        labels,
-        datasets: [
-          {
-            label: 'Total Defects',
-            data: totalDefectsData,
-            borderColor: 'green',
-            backgroundColor: 'rgba(0, 255, 0, 0.1)',
-            fill: true,
-            pointBackgroundColor,
-            pointRadius
-          },
-          {
-            label: 'Weighted Avg Severity',
-            data: weightedAvgData,
-            borderColor: 'purple',
-            backgroundColor: 'rgba(128, 0, 128, 0.1)',
-            fill: true,
-            pointBackgroundColor,
-            pointRadius
-          },
-          {
-            label: 'Max Severity',
-            data: maxSeverityData,
-            borderColor: 'cyan',
-            backgroundColor: 'rgba(128, 0, 128, 0.1)',
-            fill: true,
-            pointBackgroundColor,
-            pointRadius
-          },
-          {
-            label: 'Min Severity',
-            data: minSeverityData,
-            borderColor: 'blue',
-            backgroundColor: 'rgba(128, 0, 128, 0.1)',
-            fill: true,
-            pointBackgroundColor,
-            pointRadius
-          },
-          {
-            label: 'Standard Deviation Severity',
-            data: stdDevSeverityData,
-            borderColor: 'magenta',
-            backgroundColor: 'rgba(128, 0, 128, 0.1)',
-            fill: true,
-            pointBackgroundColor,
-            pointRadius
-          },
-          {
-            label: 'Benchmark',
-            data: benchmarkData,
-            borderColor: 'green', // or any color you prefer
-            borderDash: [5, 5],   // This creates a dotted line effect
-            fill: false,
-            pointRadius: 0        // Hide points for benchmark line
-          }
-        ]
-      };
+      if (props.showBenchmarks)
+      {
+        const benchmarkValue = props.benchmarks["DefectScore"];
+        const benchmarkData = labels.map(() => benchmarkValue);
+        const defaultColor = 'red';
+        const highlightColor = 'orange';
+        const pointBackgroundColor = totalDefectsData.map((_, index) =>
+          index === totalDefectsData.length - 1 ? highlightColor : defaultColor
+        );
+        const pointRadius = totalDefectsData.map((_, index) =>
+          index === totalDefectsData.length - 1 ? 8 : 3
+        );
+        return {
+          labels,
+          datasets: [
+            {
+              label: 'Total Defects',
+              data: totalDefectsData,
+              borderColor: 'green',
+              backgroundColor: 'rgba(0, 255, 0, 0.1)',
+              fill: true,
+              pointBackgroundColor,
+              pointRadius
+            },
+            {
+              label: 'Weighted Avg Severity',
+              data: weightedAvgData,
+              borderColor: 'purple',
+              backgroundColor: 'rgba(128, 0, 128, 0.1)',
+              fill: true,
+              pointBackgroundColor,
+              pointRadius
+            },
+            {
+              label: 'Max Severity',
+              data: maxSeverityData,
+              borderColor: 'cyan',
+              backgroundColor: 'rgba(128, 0, 128, 0.1)',
+              fill: true,
+              pointBackgroundColor,
+              pointRadius
+            },
+            {
+              label: 'Min Severity',
+              data: minSeverityData,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(128, 0, 128, 0.1)',
+              fill: true,
+              pointBackgroundColor,
+              pointRadius
+            },
+            {
+              label: 'Standard Deviation Severity',
+              data: stdDevSeverityData,
+              borderColor: 'magenta',
+              backgroundColor: 'rgba(128, 0, 128, 0.1)',
+              fill: true,
+              pointBackgroundColor,
+              pointRadius
+            },
+            {
+              label: 'Benchmark',
+              data: benchmarkData,
+              borderColor: 'green', // or any color you prefer
+              borderDash: [5, 5],   // This creates a dotted line effect
+              fill: false,
+              pointRadius: 0        // Hide points for benchmark line
+            }
+          ]
+        };
+      }
+      else {
+        return {
+          labels,
+          datasets: [
+            {
+              label: 'Total Defects',
+              data: totalDefectsData,
+              borderColor: 'green',
+              backgroundColor: 'rgba(0, 255, 0, 0.1)',
+              fill: true
+            },
+            {
+              label: 'Weighted Avg Severity',
+              data: weightedAvgData,
+              borderColor: 'purple',
+              backgroundColor: 'rgba(128, 0, 128, 0.1)',
+              fill: true
+            },
+            {
+              label: 'Max Severity',
+              data: maxSeverityData,
+              borderColor: 'cyan',
+              backgroundColor: 'rgba(128, 0, 128, 0.1)',
+              fill: true
+            },
+            {
+              label: 'Min Severity',
+              data: minSeverityData,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(128, 0, 128, 0.1)',
+              fill: true
+            },
+            {
+              label: 'Standard Deviation Severity',
+              data: stdDevSeverityData,
+              borderColor: 'magenta',
+              backgroundColor: 'rgba(128, 0, 128, 0.1)',
+              fill: true
+            }
+          ]
+        };
+      }
     });
 
     // Options for the DefectScore chart
