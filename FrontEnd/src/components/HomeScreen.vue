@@ -411,7 +411,7 @@ header {
   padding: px;
   text-align: center;
   color: white;
-  font-size: 14px;
+  font-size: 10px;
   font-weight: bold;
   border-radius: 0;
   width: 100%;
