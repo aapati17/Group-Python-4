@@ -94,7 +94,7 @@ export default {
   padding: 0.5rem 0.5rem;
   border: 1px solid #ccc;
   border-radius: 0.375rem;
-  font-size: 12px;
+  font-size: 0.8rem;
   transition: border-color 0.3s ease;
 }
 
@@ -115,7 +115,7 @@ export default {
   border-radius: 0.25rem;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  font-size: 10px;
+  font-size: 0.8rem;
   white-space: nowrap;
   min-width: auto;
 }
@@ -141,9 +141,9 @@ export default {
   display: inline-flex;
   align-items: center;
   background: #f0f4f8;
-  padding: 0.1rem 0.1rem;
+  padding: 0.3rem 0.9rem;
   border-radius: 15px;
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   color: #333;
   transition: transform 0.3s ease, opacity 0.3s ease;
   will-change: transform, opacity;
