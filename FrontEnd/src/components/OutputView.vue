@@ -83,31 +83,32 @@
       </div>
     </div>
     <br>
-    <!-- LCOM Metrics Section -->
-    <h2>LCOM Metrics Over Time</h2>
-    <br>
-      <div class="controls">
-        <div class="control-group">
-          <label for="class-select">Select Class:</label>
-          <select id="class-select" v-model="selectedClass" v-if="classNames.length">
-            <option v-for="className in classNames" :key="className" :value="className">
-              {{ className }}
-            </option>
-          </select>
+    <div v-if="computedData.LCOM4 || computedData.LCOMHS">
+      <!-- LCOM Metrics Section -->
+      <h2>LCOM Metrics Over Time</h2>
+      <br>
+        <div class="controls">
+          <div class="control-group">
+            <label for="class-select">Select Class:</label>
+            <select id="class-select" v-model="selectedClass" v-if="classNames.length">
+              <option v-for="className in classNames" :key="className" :value="className">
+                {{ className }}
+              </option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="metric-select">Select Metric:</label>
+            <select id="metric-select" v-model="selectedMetric">
+              <option v-for="metric in availableLCOMMetrics" :key="metric" :value="metric">
+                {{ metric }}
+              </option>
+            </select>
+          </div>
         </div>
-        <div class="control-group">
-          <label for="metric-select">Select Metric:</label>
-          <select id="metric-select" v-model="selectedMetric">
-            <option v-for="metric in availableLCOMMetrics" :key="metric" :value="metric">
-              {{ metric }}
-            </option>
-          </select>
-        </div>
+      <!-- LCOM Chart (only shows when a valid metric is selected) -->
+      <div class="chart-container">
+        <Line :data="chartData" :options="chartOptions" />
       </div>
-
-    <!-- LCOM Chart (only shows when a valid metric is selected) -->
-    <div class="chart-container">
-      <Line v-if="selectedMetric !== 'DefectScore'" :data="chartData" :options="chartOptions" />
     </div>
 
     <!-- DefectScore Visualization -->
