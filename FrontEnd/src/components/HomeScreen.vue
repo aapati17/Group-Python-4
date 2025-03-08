@@ -1,8 +1,9 @@
 <template>
-  <main>
-    <header v-if="!showOutput">
+  <header v-if="!showOutput">
       <h1>Metric Calculator</h1>
     </header>
+  <main>
+    
     <!-- Show Input Form if OutputView or BenchmarkDialog is Hidden -->
     <div v-if="!showOutput && !showBenchmarkDialog">
       <div class="input-container1">
@@ -252,6 +253,7 @@ export default {
     watch(githubUrl, () => {
       isValidRepo.value = false;
       errorMessages.value.githubUrl = '';
+      selectedMetrics.value = [];
     });
 
     const calculateMetrics = async () => {
@@ -395,10 +397,6 @@ export default {
 </script>
 
 <style scoped>
-main {
-  text-align: center;
-  padding: 40px 20px;
-}
 
 
 header {
