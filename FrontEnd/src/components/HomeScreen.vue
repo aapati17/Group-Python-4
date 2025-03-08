@@ -1,78 +1,94 @@
 <template>
   <main>
-    <h1>Metric Calculator</h1>
-
+    <header v-if="!showOutput">
+      <h1>Metric Calculator</h1>
+    </header>
     <!-- Show Input Form if OutputView or BenchmarkDialog is Hidden -->
     <div v-if="!showOutput && !showBenchmarkDialog">
-      <div class="input-container">
+      <div class="input-container1">
         <label for="github-url">Enter GitHub Repository URL:</label>
-        <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository" @keyup.enter="checkGitHubRepoExists"/>
-        <button @click="checkGitHubRepoExists">Validate your URL</button>
+        <input type="text" id="github-url" v-model="githubUrl" placeholder="https://github.com/user/repository"
+          @keyup.enter="checkGitHubRepoExists" />
+        <button v-if="!isValidRepo" @click="checkGitHubRepoExists">Validate your URL</button>
         <p v-if="errorMessages.githubUrl" :class="{ 'error': !isValidRepo, 'success': isValidRepo }">
           {{ errorMessages.githubUrl }}
         </p>
       </div>
 
-      <div class="input-container" v-if="isValidRepo">
-        <label>Select Metrics to Calculate:</label>
-        <div class="checkbox-group" :class="{ 'disabled': !isValidRepo }">
-          <div class="checkbox-item" v-for="metric in availableMetrics" :key="metric.value">
-            <input type="checkbox" :id="metric.value" :value="metric.value" v-model="selectedMetrics" :disabled="!isValidRepo" />
-            <label :for="metric.value">{{ metric.label }}</label>
+      <br>
+      <br>
+      <div class="container-wrapper">
+        <div
+          :class="{ 'input-container2': !selectedMetrics.includes('DefectScore'), 'input-container-defect': selectedMetrics.includes('DefectScore') }"
+          v-if="isValidRepo">
+          <label>Select Metrics to Calculate:</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item" v-for="metric in availableMetrics" :key="metric.value">
+              <input type="checkbox" :id="metric.value" :value="metric.value" v-model="selectedMetrics"
+                :disabled="!isValidRepo" />
+              <label :for="metric.value">{{ metric.label }}</label>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Tag Input Box for Defect Score -->
-      <div class="input-container" v-if="selectedMetrics.includes('DefectScore')">
-        <h5>You can find the Defect tags and weights extracted from your project in the box below. If no tags were found, here are some default tags and weights. Customize them according to your need and click Update.</h5>
-        <TagInput v-model:tags="tagsData" />
-          <h5>Once you have customized all of your tags and their weights, click on the Submit button.</h5>
+        <!-- Tag Input Box for Defect Score -->
+        <div class="input-container3" v-if="selectedMetrics.includes('DefectScore')">
+          <label1>You can find the Defect tags and weights extracted from your project in the box below. If no tags
+            were
+            found, here are some default tags and weights. Customize them according to your need and click Update.
+          </label1>
+          <TagInput v-model:tags="tagsData" />
+          <label1>Once you have customized all of your tags and their weights, click on the Calculate button.</label1>
+        </div>
       </div>
-      <button @click="submitData" :disabled="!isValidRepo || selectedMetrics.length === 0 || (selectedMetrics.includes('DefectScore') && tagsData.length === 0)">{{buttonText}}</button>
-
-      <h4 class="loading-text" v-if="isLoading">Please Wait, your metrics are being computed.<br>The larger the reop, the longer the time.</h4>
+      <br>
+      <br>
+      <button v-if="selectedMetrics.length > 0" @click="submitData"
+        :disabled="!isValidRepo || selectedMetrics.length === 0 || (selectedMetrics.includes('DefectScore') && tagsData.length === 0)">{{
+          buttonText }}</button>
+      <h4 class="loading-text" v-if="isLoading">Please Wait, your metrics are being computed.<br>The larger the reop,
+        the longer the time.</h4>
     </div>
 
     <!-- Benchmark Input Dialog -->
     <div v-if="showBenchmarkDialog" class="dialog-overlay">
       <div class="dialog">
-        <h3>For each selected metric, you can optionally enter a benchmark score and choose whether to display it on the chart.</h3>
-        <div v-for="metric in availableMetrics" :key="metric.value" style="align-items: center;">
-          <div v-if="selectedMetrics.includes(metric.value)">
-          <label :for="`benchmark-${metric.value}`">
-            {{ metric.label }} Benchmark:
-          </label>
-          <input
-            type="number"
-            :id="`benchmark-${metric.value}`"
-            v-model.number="benchmarkInputs[metric.value]"
-            :placeholder="`Enter ${metric.label} benchmark`"
-          />
-          <label :for="`show-${metric.value}`">Show Benchmark:</label>
-          <input
-            type="checkbox"
-            :id="`show-${metric.value}`"
-            v-model="showBenchmarkLines[metric.value]"
-          />
+        <h4>For each selected metric,
+          you can optionally enter a benchmark
+          score in the input box and choose whether to display it
+          on the chart by checking or unchecking the checkbox for that metric</h4>
+        <br>
+        <div class="benchmark-container">
+          <div v-for="metric in availableMetrics" :key="metric.value" class="benchmark-item">
+            <div v-if="selectedMetrics.includes(metric.value)" class="metric-row">
+              <input type="checkbox" :id="`show-${metric.value}`" v-model="showBenchmarkLines[metric.value]" />
+              <div class="label-input-container">
+                <label :for="`benchmark-${metric.value}`">
+                  {{ metric.label }} Benchmark:
+                </label>
+                <input type="number" :id="`benchmark-${metric.value}`" v-model.number="benchmarkInputs[metric.value]"
+                  :placeholder="`Enter ${metric.label} benchmark`" />
+              </div>
+            </div>
+          </div>
         </div>
-        </div>
-        <div style="align-self: center;">
-          <button @click="handleBenchmarkSubmit(true)">Apply Benchmarks and Show Charts</button>
+
+        <div class="button-container">
+          <button @click="handleBenchmarkSubmit(true)">Apply/Continue</button>
         </div>
       </div>
     </div>
 
+
     <!-- Show Output Screen After Validation -->
-    <OutputView
-      :computedData="computedData"
-      :benchmarks="benchmarks"
-      :showBenchmarkLines="showBenchmarkLines"
-      v-if="showOutput"
-      @goBack="showFormAgain"
-      @updateBenchmarks="postBenchmarks"
-    />
+    <OutputView :computedData="computedData" :benchmarks="benchmarks" :showBenchmarkLines="showBenchmarkLines"
+      v-if="showOutput" @goBack="showFormAgain" @updateBenchmarks="postBenchmarks" />
   </main>
+  <!-- Footer Section -->
+  <footer class="footer" v-if="!showOutput">
+    <p>&copy; 2024 Metric Calculator. All rights reserved.</p>
+    <p>Developed by: Aniket Patil, Aum Garasia, Satyam Shekhar, Uma Maheswar Reddy Nallamilli</p>
+  </footer>
 </template>
 
 <script>
@@ -105,7 +121,7 @@ export default {
     // Loading state
     const isLoading = ref(false);
     const loadingText = ref('Loading...');
-    const buttonText = ref('Submit Data');
+    const buttonText = ref('Calculate');
     const availableMetrics = [
       { value: 'LCOM4', label: 'LCOM4' },
       { value: 'LCOMHS', label: 'LCOMHS' },
@@ -200,6 +216,12 @@ export default {
 
     const checkGitHubRepoExists = async () => {
       isValidRepo.value = false;
+
+      if (!githubUrl.value) {
+        errorMessages.value.githubUrl = 'Repository URL cannot be empty.';
+        return;
+      }
+
       if (!isValidGitHubUrl(githubUrl.value)) {
         errorMessages.value.githubUrl = 'Invalid GitHub URL format.';
         return;
@@ -216,19 +238,21 @@ export default {
         }
         const files = await response.json();
         const keys = Object.keys(files);
-
         if (!keys.includes('Java')) {
           errorMessages.value.githubUrl =
             'The repository does not have a Java project.';
           return;
         }
-
-        errorMessages.value.githubUrl = 'Valid GitHub repository.';
+        errorMessages.value.githubUrl = 'Valid GitHub Repository.';
         isValidRepo.value = true;
       } catch (error) {
         errorMessages.value.githubUrl = 'Error connecting to GitHub.';
       }
     };
+    watch(githubUrl, () => {
+      isValidRepo.value = false;
+      errorMessages.value.githubUrl = '';
+    });
 
     const calculateMetrics = async () => {
       try {
@@ -296,7 +320,7 @@ export default {
 
     const showFormAgain = () => {
       showOutput.value = false;
-      buttonText.value = 'Submit Data';
+      buttonText.value = 'Calculate';
     };
 
     //New function to handle the benchmark submission
@@ -376,15 +400,91 @@ main {
   padding: 40px 20px;
 }
 
-.input-container {
-  margin: 20px auto;
+
+header {
+  background: linear-gradient(to right, #09203f, #537895);
+  padding: px;
+  text-align: center;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 0;
+  width: 100%;
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.footer {
+  background: linear-gradient(to right, #09203f, #537895);
+  padding: px;
+  text-align: center;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 0;
+  width: 100%;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.input-container1 {
+  margin: 100px auto;
+  margin-bottom: 5px;
   width: 80%;
   max-width: 500px;
   text-align: left;
 }
 
+.container-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0px;
+  width: 100%;
+}
+
+.input-container2 {
+  margin: 10px auto;
+  width: 100%;
+  max-width: 500px;
+  margin-left: 500px;
+  text-align: left;
+}
+
+.input-container3 {
+  margin-top: 20px auto;
+  width: 50%;
+  max-width: 400px;
+  text-align: left;
+  margin-left: 0px;
+  margin-right: 320px;
+  margin-bottom: 0px;
+  padding-left: 20px;
+  border-left: 1px solid #007bff;
+}
+
+
+.input-container-defect {
+  margin: 10px auto;
+  margin-left: 450px;
+  text-align: left;
+}
+
+
 label {
   font-size: 16px;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+label1 {
+  font-size: 13px;
   font-weight: bold;
   display: block;
   margin-bottom: 5px;
@@ -395,7 +495,7 @@ input[type="number"] {
   display: block;
   width: 100%;
   padding: 10px;
-  font-size: 16px;
+  font-size: 15px;
   margin-bottom: 5px;
   border: 1px solid #ccc;
   border-radius: 5px;
@@ -478,58 +578,138 @@ button:hover {
 }
 
 /* Styles for the dialog */
+/* Overlay for the dialog */
 .dialog-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Ensure it's on top */
+  z-index: 1000;
 }
 
+/* Dialog box styling */
 .dialog {
   background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
   text-align: center;
-  width: 50%;
+  width: 40%;
+  max-width: 500px;
+  min-width: 350px;
 }
 
+/* Header styling */
 .dialog h3 {
-  margin-bottom: 15px;
-  text-align: center;
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
 }
 
+/* Container for all benchmark inputs */
+.benchmark-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Individual benchmark item */
+.benchmark-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Label styling */
 .dialog label {
   font-size: 14px;
-  font-weight: normal;
-  display: inline-block;
-  margin: 5px 10px 5px 0;
-  text-align: left;
-  width: auto;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+  text-align: center;
 }
 
-.dialog input[type='number'] {
-    width: 200px;
+/* Input field styling */
+.dialog input[type="number"] {
+  width: 80%;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  text-align: center;
 }
 
-.dialog input[type='checkbox'] {
-    width: auto;
-    margin-left: 5px;
-}
-
-.dialog > div {
+/* Checkbox container */
+.checkbox-container {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 5px;
+  margin-top: 5px;
+  flex-direction: row-reverse;
+}
+
+/* Button styling */
+.button-container {
+  margin-top: 20px;
 }
 
 .dialog button {
-  margin: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.dialog button:hover {
+  background-color: #0056b3;
+}
+
+.metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.label-input-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.label-input-container label {
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.label-input-container input[type="number"] {
+  padding: 5px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 220px;
+  text-align: left;
+}
+
+.metric-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
 }
 </style>
