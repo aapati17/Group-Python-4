@@ -61,7 +61,8 @@ ___
 ### How to use the Web-App
 
 Once the URL is loaded, you would be greeted with the landing page shown below:
-![image](https://github.com/user-attachments/assets/61a754c0-a28d-432c-a595-1fb092391a85)
+![image](https://github.com/user-attachments/assets/7e8b781d-49b6-46b6-a422-8f7145c2a907)
+
 
 Now, to compute your metrics, you have to follow 4 steps:
 
@@ -71,7 +72,7 @@ Now, to compute your metrics, you have to follow 4 steps:
 - [Submit the data](#submit-the-data)
 #### Validate your GitHub URL
 - Copy and Paste your GitHub repository URL into the textbox
-![image](https://github.com/user-attachments/assets/13239fa5-4e72-4811-84fd-7317bd9bb6d1)
+![image](https://github.com/user-attachments/assets/5d24b4d9-c354-490c-b3b1-ae90490cb746)
 - There are two ways to validate your input, either by pressing `return` key or by clicking on the **Validate your URL** button below the textbox highlighted above.
 
 #### Do's and Don'ts:
@@ -96,14 +97,17 @@ This repository has URL: https://github.com/agarasia/ser515
 ![image](https://github.com/user-attachments/assets/1113e8b9-a77e-4e96-94be-fd4ad7b625a9)
 
 Note that unless and until you see the message `Valid GitHub repository`, the options for metrics are *NOT VISIBLE*.
-![image](https://github.com/user-attachments/assets/019be2e8-2c96-4cea-9c05-9b167ec4b3a4)
+![image](https://github.com/user-attachments/assets/f275db6f-8fa7-44d2-9d8d-aae0c5c0c7cb)
+
 
 #### Select one or more metrics to calculate:
 Now that you have a valid GitHub URL and it is validated, you would now see that the checkboxes for metrics are clickable.
-![image](https://github.com/user-attachments/assets/728f0247-59a1-4cf5-bacf-cc43ea56bc83)
+![image](https://github.com/user-attachments/assets/ea8aa9f4-b857-4908-820e-fe91df4dbc9b)
+
 
 You can click on one or more metrics (say for instance, you want to calculate LCOM4 and Defect Score) simply by clicking on the corresponding checkboxes.
-![image](https://github.com/user-attachments/assets/f28ea483-b496-4729-840e-818651379f24)
+![image](https://github.com/user-attachments/assets/e81514ab-89f1-41f2-8a9a-db315135bdac)
+
 
 **Additional Instructions for Defect Score Calculation**
 
@@ -142,9 +146,9 @@ Your custom defect tag would now be displayed below the **+ Add Tag** button.
 ![image](https://github.com/user-attachments/assets/d6669b4b-5b7c-41de-9420-9bea325a4f87)
 
 #### Submit the data
-Once all the metrics you need are selected, just click on **Submit** button.
+Once all the metrics you need are selected, just click on **Calculate** button.
+![image](https://github.com/user-attachments/assets/8655fb30-dc28-4da8-a304-89391c217b12)
 
-![image](https://github.com/user-attachments/assets/34a5bb63-f1ef-458a-9144-99288d61ade8)
 
 The Computation can take longer depending on the number of Java files as well as their sizes. The text on the Submit Data button will change to '*LOADING....*'. 
 
@@ -159,9 +163,10 @@ You would also notice that under the LCOM4 benchmark, the show benchmark checkbo
 
 Additionally, you can also do something as a mix of the two, say I want to set a new benchmark score for LCOM4 but do not want to see the benchmark in the chart. I can type a new benchmark score within the textbox but still keep the checkbox unchecked.
 
-![image](https://github.com/user-attachments/assets/79b348db-d072-4f0b-951b-adf351a6f498)
+![image](https://github.com/user-attachments/assets/389b923b-fddc-49d2-83e3-d83ba0a8fc97)
 
-Once the *Apply Benchmarks and Show Charts* button is clicked, the results would be shown for the metrics within 2 graphs. One for the LCOM metrics (LCOM4 and LCOMHS), and other for the Defect Score.
+
+Once the *Apply/Continue* button is clicked, the results would be shown for the metrics within 2 graphs. One for the LCOM metrics (LCOM4 and LCOMHS), and other for the Defect Score.
 
 ![image](https://github.com/user-attachments/assets/0a7e8d1e-1bd5-4c94-8c21-d011ba440cb8)
 
