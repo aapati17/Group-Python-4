@@ -1,13 +1,13 @@
 import os
 from fastapi import APIRouter, HTTPException, Form, Body, Query
-from typing import Optional, Dict
+from typing import Optional, List
 from services.defect_score_calculator import compute_defect_score_from_github
-from services.firebase_service import to_doc_id,store_label_mapping_in_firebase,\
-    fetch_label_mapping_from_firebase, \
-    store_def_score_data_in_firebase, \
-    fetch_def_score_data_from_firebase, \
-    store_benchmark_in_firebase, \
-    get_benchmark_from_firebase
+from services.mongo_service import to_doc_id,store_label_mapping_in_mongo,\
+    fetch_label_mapping_from_mongo, \
+    store_def_score_data_in_mongo, \
+    fetch_def_score_data_from_mongo, \
+    store_benchmark_in_mongo, \
+    get_benchmark_from_mongo
 from datetime import datetime
 import time
 
@@ -36,7 +36,7 @@ async def calculate_defect_score(
         # Compute the defect score from the GH Issues
         result = compute_defect_score_from_github(sourceValue, token)
 
-        history_data = fetch_def_score_data_from_firebase(sourceValue)
+        history_data = fetch_def_score_data_from_mongo(sourceValue)
         current_timestamp = datetime.utcfromtimestamp(time.time()).isoformat() + "Z"
 
         current_data = {
@@ -45,7 +45,7 @@ async def calculate_defect_score(
             "gitUniqueId": to_doc_id(sourceValue)   
         }
 
-        store_def_score_data_in_firebase(sourceValue, result)
+        store_def_score_data_in_mongo(sourceValue, result)
 
         return { "defect_score_history": history_data if history_data else [],
                  "current_defect_score": current_data }
@@ -57,13 +57,13 @@ async def calculate_defect_score(
 @router.post("/labelsMapping")
 def store_labels_for_project(
     sourceValue: str = Body(..., example="https://github.com/owner/repo"),
-    labelSeverityMap: Dict[str, int] = Body(..., example={"bug": 2, "critical": 5})
+    labelSeverityMap: List = Body(..., example=[{"key": "bug", "value": 2}, {"key": "critical", "value": 5}])
 ):
     """
-    Stores custom label -> severity mapping in Firebase for a given repo URL.
+    Stores custom label -> severity mapping in mongo for a given repo URL.
     """
     try:
-        store_label_mapping_in_firebase(sourceValue, labelSeverityMap)
+        store_label_mapping_in_mongo(sourceValue, labelSeverityMap)
         return {"message": "Label severity map stored successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -74,19 +74,37 @@ def fetch_labels_for_project(
     sourceValue: str = Query(..., example="https://github.com/owner/repo")
 ):
     """
-    Get custom label -> severity mapping from Firebase for a given repo URL.
+    Get custom label -> severity mapping from mongo for a given repo URL.
     """
     try:
-        label_mapping = fetch_label_mapping_from_firebase(sourceValue)
+        label_mapping = fetch_label_mapping_from_mongo(sourceValue)
         if not label_mapping:
-            return {
-            "bug": 2,
-            "minor": 2,
-            "major": 4,
-            "critical": 5,
-            "high": 5,
-            "low": 1
-        }
+            return [
+                {
+                    "key": "bug",
+                    "value": 2
+                },
+                {
+                    "key": "minor",
+                    "value": 2
+                },
+                {
+                    "key": "major",
+                    "value": 4
+                },
+                {
+                    "key": "critical",
+                    "value": 5
+                },
+                {
+                    "key": "high",
+                    "value": 5
+                },
+                {
+                    "key": "low",
+                    "value": 1
+                }
+            ]
         return label_mapping
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -94,13 +112,13 @@ def fetch_labels_for_project(
 @router.post("/benchmark")
 def store_labels_for_project(
     sourceValue: str = Body(..., example="https://github.com/owner/repo"),
-    benchmark: int = Body(..., example=1)
+    benchmark: float = Body(..., example=1)
 ):
     """
-    Stores custom benchmark -> user entered bench mark in Firebase for a given repo URL.
+    Stores custom benchmark -> user entered bench mark in mongo for a given repo URL.
     """
     try:
-        store_benchmark_in_firebase(sourceValue, benchmark)
+        store_benchmark_in_mongo(sourceValue, benchmark)
         return {"message": "benchmark stored successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -110,10 +128,10 @@ def store_labels_for_project(
     sourceValue: str = Query(..., example="https://github.com/owner/repo")
 ):
     """
-    get benchmark -> benchmark from Firebase for a given repo URL.
+    get benchmark -> benchmark from mongo for a given repo URL.
     """
     try:
-        benchmark = get_benchmark_from_firebase(sourceValue)
+        benchmark = get_benchmark_from_mongo(sourceValue)
         return {"defect_score_benchmark": benchmark}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

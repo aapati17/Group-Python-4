@@ -4,7 +4,7 @@ from typing import Optional
 from services.lcom4_calculator import calculate_lcom4
 from services.project_parser import parse_java_files_in_dir
 from services.github_service import fetch_project_from_github, cleanup_dir
-from services.firebase_service import to_doc_id, store_lcom4_data_in_firebase, fetch_lcom4_data_from_firebase, get_benchmark_from_firebase, store_benchmark_in_firebase
+from services.mongo_service import to_doc_id, store_lcom4_data_in_mongo, fetch_lcom4_data_from_mongo, get_benchmark_from_mongo, store_benchmark_in_mongo
 from datetime import datetime
 import time
 
@@ -45,7 +45,7 @@ async def calculate_lcom4_endpoint(
             results.append({"class_name": cls.name, "score": lcom4_value})
 
 
-        history_data = fetch_lcom4_data_from_firebase(gitHubLink)
+        history_data = fetch_lcom4_data_from_mongo(gitHubLink)
         current_timestamp = datetime.utcfromtimestamp(time.time()).isoformat() + "Z"
 
         current_data = {
@@ -54,7 +54,7 @@ async def calculate_lcom4_endpoint(
             "gitUniqueId": to_doc_id(gitHubLink)   
         }
 
-        store_lcom4_data_in_firebase(gitHubLink, results)
+        store_lcom4_data_in_mongo(gitHubLink, results)
 
 
         return { "lcom4_history": history_data if history_data else [],
@@ -72,13 +72,13 @@ async def calculate_lcom4_endpoint(
 @router.post("/benchmark")
 def store_labels_for_project(
     sourceValue: str = Body(..., example="https://github.com/owner/repo"),
-    benchmark: int = Body(..., example=1)
+    benchmark: float = Body(..., example=1)
 ):
     """
-    Stores custom benchmark -> user entered bench mark in Firebase for a given repo URL.
+    Stores custom benchmark -> user entered bench mark in mongo for a given repo URL.
     """
     try:
-        store_benchmark_in_firebase(sourceValue, benchmark)
+        store_benchmark_in_mongo(sourceValue, benchmark)
         return {"message": "benchmark stored successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -88,10 +88,10 @@ def store_labels_for_project(
     sourceValue: str = Query(..., example="https://github.com/owner/repo")
 ):
     """
-    get benchmark -> benchmark from Firebase for a given repo URL.
+    get benchmark -> benchmark from mongo for a given repo URL.
     """
     try:
-        benchmark = get_benchmark_from_firebase(sourceValue)
+        benchmark = get_benchmark_from_mongo(sourceValue)
         return {"lcom4_benchmark": benchmark}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

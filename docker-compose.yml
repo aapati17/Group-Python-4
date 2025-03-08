@@ -1,15 +1,23 @@
 services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+  
   lcom4:
     build:
       context: ./BackEnd/lcom4
       dockerfile: dockerfile
     container_name: lcom4_container
+    depends_on:
+      - mongodb
     ports:
       - "8001:8000"   # host:container
-    volumes:
-      - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
     environment:
-      - FIREBASE_CREDS=/app/serviceAccountKey.json
+      - MONGO_URI=mongodb://mongodb:27017/
     # If you only want the gateway to call it internally, you can omit the port mapping.
     # But let's keep it to show direct access for debugging.
 
@@ -18,12 +26,12 @@ services:
       context: ./BackEnd/lcomhs
       dockerfile: dockerfile
     container_name: lcomhs_container
+    depends_on:
+      - mongodb
     ports:
       - "8002:8000"   # host:container
-    volumes:
-      - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
     environment:
-      - FIREBASE_CREDS=/app/serviceAccountKey.json
+      - MONGO_URI=mongodb://mongodb:27017/
     # If you only want the gateway to call it internally, you can omit the port mapping.
     # But let's keep it to show direct access for debugging.
 
@@ -32,12 +40,13 @@ services:
       context: ./BackEnd/defectscore
       dockerfile: dockerfile
     container_name: defect_score_container
+    depends_on:
+      - mongodb
     ports:
       - "8003:8000"   # host:container
-    volumes:
-      - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
     environment:
-      - FIREBASE_CREDS=/app/serviceAccountKey.json
+      - MONGO_URI=mongodb://mongodb:27017/
+
     # If you only want the gateway to call it internally, you can omit the port mapping.
     # But let's keep it to show direct access for debugging.
   
@@ -66,3 +75,6 @@ services:
       - "5173:5173"  # host:frontend
     depends_on:
       - gateway
+
+volumes:
+  mongodb_data:

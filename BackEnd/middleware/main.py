@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Body, Query
 import httpx
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Dict
+from typing import Dict, List
 import asyncio
 
 app = FastAPI(title="API Gateway (Middleware)")
@@ -111,7 +111,7 @@ async def gateway_benchmark(
 async def gateway_benchmark_post(
     metrics: str = Body(..., example="LCOM4,DefectScore,LCOMHS"),
     gitHubLink: str = Body(..., example="like to github"),
-    benchmarks: Dict[str, int] = Body(..., description="object of key value pair for benchmarks")
+    benchmarks: Dict[str, float] = Body(..., description="object of key value pair for benchmarks")
 ):
     selected_metrics = [m.strip().lower() for m in metrics.split(",")]
     results = {}
@@ -191,7 +191,7 @@ async def get_benchmark_lcomhs(client: httpx.AsyncClient, gitHubLink: str) -> di
         raise Exception("Failed to fetch LCOMHS benchmark data")
     return {"LCOMHS": response.json()}
 
-async def post_benchmark_lcom4(client: httpx.AsyncClient, githubLink: str, benchmark: int) -> dict:
+async def post_benchmark_lcom4(client: httpx.AsyncClient, githubLink: str, benchmark: float) -> dict:
     data = {
         "sourceValue": githubLink,
         "benchmark": benchmark
@@ -201,7 +201,7 @@ async def post_benchmark_lcom4(client: httpx.AsyncClient, githubLink: str, bench
         raise Exception("Failed to post LCOM4 benchmark data")
     return {"LCOM4": response.json()}
 
-async def post_benchmark_defect_score(client: httpx.AsyncClient, githubLink: str, benchmark: int) -> dict:
+async def post_benchmark_defect_score(client: httpx.AsyncClient, githubLink: str, benchmark: float) -> dict:
     data = {
         "sourceValue": githubLink,
         "benchmark": benchmark
@@ -211,7 +211,7 @@ async def post_benchmark_defect_score(client: httpx.AsyncClient, githubLink: str
         raise Exception("Failed to post DefectScore benchmark data")
     return {"DefectScore": response.json()}
 
-async def post_benchmark_lcomhs(client: httpx.AsyncClient, githubLink: str, benchmark: int) -> dict:
+async def post_benchmark_lcomhs(client: httpx.AsyncClient, githubLink: str, benchmark: float) -> dict:
     data = {
         "sourceValue": githubLink,
         "benchmark": benchmark
@@ -225,7 +225,7 @@ async def post_benchmark_lcomhs(client: httpx.AsyncClient, githubLink: str, benc
 @app.post("/gateway/defectscore/labelmapping")
 async def gateway_get_defectscore_labelmapping(
     gitHubLink: str = Body(..., example="https://github.com/owner/repo"),
-    labelSeverityMap: Dict[str, int] = Body(..., example={"bug": 2, "critical": 5})
+    labelSeverityMap: List = Body(..., example=[{"key": "bug", "value": 2}, {"key": "critical", "value": 5}])
     ):
     """
     Post the label mapping data to database using Defect Score service
