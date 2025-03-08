@@ -16,9 +16,7 @@
 
 5. [How to use the Web-App](#how-to-use-the-web-app)
 
-6. [Bugs (as of Period-1-release)](#bugs-as-of-period-1-release)
-
-7. [Contributors](#contributors)
+6. [Contributors](#contributors)
 
   
 
@@ -65,6 +63,10 @@ ___
 - Readme and Documentation revised to explain the usage and prerequisites of the project.
 
 - Benchmarks are no longer forced on to the user.
+
+- Added cards for showing current metric values.
+
+- UI overhaul of the results page.
 
 ---
 
@@ -349,20 +351,6 @@ For defect score, a number of values are illustrated; which are:
 You can hover over data points to see detailed timestamps and score values. The last data point is highlighted with a different color and larger radius, so you know it represents the most recent score.
 
 ___
-
-  
-
-### Bugs (as of Group-Python-4-Period-2-beta-2)
-
-  
-
-- The UI for the application needs an overhaul.
-
-- If the metrics are being calculated for the first time, the graph shown is empty.
-
-  
-
-These bugs would be improved upon in future releases.
 
   
 
